@@ -1,0 +1,122 @@
+version: "3.9"
+
+# ============================================================
+# Docker Compose pour développement local
+# Services : api, postgres, redis, et 3 workers Celery
+# ============================================================
+
+x-app-env: &app-env
+  env_file:
+    - .env
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  # ---------- Base de données ----------
+  postgres:
+    image: postgres:15-alpine
+    container_name: admission_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admission
+      POSTGRES_PASSWORD: admission
+      POSTGRES_DB: admission_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admission -d admission_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---------- Cache & broker ----------
+  redis:
+    image: redis:7-alpine
+    container_name: admission_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ---------- API FastAPI ----------
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: admission_api
+    restart: unless-stopped
+    <<: *app-env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  # ---------- Worker OCR (Tesseract) ----------
+  worker-ocr:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    container_name: admission_worker_ocr
+    restart: unless-stopped
+    <<: *app-env
+    volumes:
+      - ./app:/app/app
+    command: celery -A app.workers.celery_app worker --loglevel=INFO --queues=ocr --concurrency=2 -n worker-ocr@%h
+
+  # ---------- Worker IA classification ----------
+  worker-ai:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    container_name: admission_worker_ai
+    restart: unless-stopped
+    <<: *app-env
+    volumes:
+      - ./app:/app/app
+    command: celery -A app.workers.celery_app worker --loglevel=INFO --queues=ai --concurrency=4 -n worker-ai@%h
+
+  # ---------- Worker Webhooks ----------
+  worker-webhook:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    container_name: admission_worker_webhook
+    restart: unless-stopped
+    <<: *app-env
+    volumes:
+      - ./app:/app/app
+    command: celery -A app.workers.celery_app worker --loglevel=INFO --queues=webhooks --concurrency=8 -n worker-webhook@%h
+
+  # ---------- Beat (scheduler optionnel) ----------
+  worker-beat:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    container_name: admission_worker_beat
+    restart: unless-stopped
+    <<: *app-env
+    volumes:
+      - ./app:/app/app
+    command: celery -A app.workers.celery_app beat --loglevel=INFO
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
