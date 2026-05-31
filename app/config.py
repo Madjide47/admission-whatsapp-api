@@ -79,6 +79,10 @@ class Settings(BaseSettings):
     TESSERACT_LANG: str = "fra+eng"
     TESSERACT_CMD: str = ""
 
+    # ---------------- Mode démo ----------------
+    # Active les stubs locaux : Twilio → console, GCS → filesystem, IA → mock
+    DEMO_MODE: bool = False
+
     # ---------------- Calculés / dérivés ----------------
     @property
     def is_production(self) -> bool:

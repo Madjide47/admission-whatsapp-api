@@ -1,23 +1,58 @@
-"""Service Google Cloud Storage — upload et URLs signées pour documents."""
+"""Service de stockage — GCS en production, filesystem local en mode démo."""
 import logging
 import uuid
 from datetime import timedelta
+from pathlib import Path
 from typing import BinaryIO
-
-from google.cloud import storage
-from google.cloud.exceptions import NotFound
 
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+
+# Répertoire local utilisé en mode démo
+_LOCAL_UPLOAD_DIR = Path("uploads")
+
+
+class LocalStorageService:
+    """Stockage local sur le filesystem — uniquement pour le mode démo."""
+
+    def upload_document(
+        self,
+        application_id: uuid.UUID,
+        file_stream: BinaryIO,
+        original_filename: str,
+        mime_type: str | None = None,
+    ) -> str:
+        random_id = uuid.uuid4().hex[:12]
+        safe_name = original_filename.replace("/", "_").replace("\\", "_")
+        path = f"applications/{application_id}/{random_id}_{safe_name}"
+        dest = _LOCAL_UPLOAD_DIR / path
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(file_stream.read())
+        logger.info("[DEMO] Document sauvegardé localement : %s", dest)
+        return path
+
+    def download_to_bytes(self, gcs_path: str) -> bytes:
+        src = _LOCAL_UPLOAD_DIR / gcs_path
+        if not src.exists():
+            raise FileNotFoundError(f"Fichier local introuvable : {src}")
+        return src.read_bytes()
+
+    def generate_signed_url(self, gcs_path: str, expiry_minutes: int | None = None) -> str:
+        return f"file://uploads/{gcs_path}"
+
+    def delete(self, gcs_path: str) -> None:
+        path = _LOCAL_UPLOAD_DIR / gcs_path
+        if path.exists():
+            path.unlink()
 
 
 class StorageService:
     """Wrapper autour de google-cloud-storage."""
 
     def __init__(self) -> None:
-        # Le client utilise GOOGLE_APPLICATION_CREDENTIALS automatiquement
-        self.client = storage.Client(project=settings.GCS_PROJECT_ID)
+        from google.cloud import storage as gcs
+        self.client = gcs.Client(project=settings.GCS_PROJECT_ID)
         self.bucket = self.client.bucket(settings.GCS_BUCKET_NAME)
 
     def upload_document(
@@ -46,6 +81,7 @@ class StorageService:
 
     def download_to_bytes(self, gcs_path: str) -> bytes:
         """Récupère le contenu d'un fichier GCS en mémoire (pour OCR, IA, etc.)."""
+        from google.cloud.exceptions import NotFound
         blob = self.bucket.blob(gcs_path)
         try:
             return blob.download_as_bytes()
@@ -73,6 +109,7 @@ class StorageService:
 
     def delete(self, gcs_path: str) -> None:
         """Supprime un fichier de GCS."""
+        from google.cloud.exceptions import NotFound
         blob = self.bucket.blob(gcs_path)
         try:
             blob.delete()
@@ -81,13 +118,16 @@ class StorageService:
             logger.warning("Fichier GCS déjà absent: %s", gcs_path)
 
 
-# Singleton — réutilisé entre les requêtes pour éviter de recréer le client
-_storage_service: StorageService | None = None
+_storage_service: StorageService | LocalStorageService | None = None
 
 
-def get_storage_service() -> StorageService:
-    """Dependency FastAPI / utilisation Celery — retourne le singleton."""
+def get_storage_service() -> StorageService | LocalStorageService:
+    """Retourne le singleton — LocalStorageService en mode démo, GCS sinon."""
     global _storage_service
     if _storage_service is None:
-        _storage_service = StorageService()
+        if settings.DEMO_MODE:
+            logger.info("[DEMO] Stockage local activé (pas de GCS)")
+            _storage_service = LocalStorageService()
+        else:
+            _storage_service = StorageService()
     return _storage_service

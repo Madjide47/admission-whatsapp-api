@@ -12,6 +12,7 @@ from collections.abc import Generator
 # Variables d'env minimales — chargées AVANT l'import de app.config
 os.environ.setdefault("ENVIRONMENT", "development")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-test-secret-key-test-secret")
+os.environ["DEMO_MODE"] = "false"  # Les tests mockent directement, pas besoin du mode démo
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
 os.environ.setdefault("CELERY_BROKER_URL", "memory://")
