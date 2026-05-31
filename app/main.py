@@ -43,10 +43,12 @@ if settings.SENTRY_DSN:
 
 
 # ---------------- Rate limiter ----------------
+# En dev/test on utilise le stockage mémoire pour éviter de dépendre de Redis
+_limiter_storage = settings.REDIS_URL if settings.is_production else "memory://"
 limiter = Limiter(
     key_func=get_remote_address,
     default_limits=[settings.RATE_LIMIT_DEFAULT],
-    storage_uri=settings.REDIS_URL,
+    storage_uri=_limiter_storage,
 )
 
 

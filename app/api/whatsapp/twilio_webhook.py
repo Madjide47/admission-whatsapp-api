@@ -56,12 +56,12 @@ def _verify_twilio_signature(request: Request, params: dict[str, str]) -> bool:
 async def twilio_incoming(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
-    From: Annotated[str, Form(...)],
-    To: Annotated[str, Form(...)],
-    Body: Annotated[str, Form("")] = "",
-    NumMedia: Annotated[str, Form("0")] = "0",
-    MediaUrl0: Annotated[str | None, Form(None)] = None,
-    MediaContentType0: Annotated[str | None, Form(None)] = None,
+    From: Annotated[str, Form()],
+    To: Annotated[str, Form()],
+    Body: Annotated[str, Form()] = "",
+    NumMedia: Annotated[str, Form()] = "0",
+    MediaUrl0: Annotated[str | None, Form()] = None,
+    MediaContentType0: Annotated[str | None, Form()] = None,
 ) -> Response:
     # Reconstruire les paramètres pour la vérif de signature
     form = await request.form()

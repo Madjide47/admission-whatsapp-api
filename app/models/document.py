@@ -5,10 +5,10 @@ from datetime import datetime
 from typing import Any
 
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, String, Text, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
+from app.database import Base, JsonB
 
 
 class DocumentType(str, enum.Enum):
@@ -56,13 +56,13 @@ class Document(Base):
     # Résultat OCR brut
     ocr_text: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    # Résultat brut du classifier IA (JSONB)
-    classification_result: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    # Résultat brut du classifier IA (JSONB sur PostgreSQL, JSON sur SQLite)
+    classification_result: Mapped[dict[str, Any] | None] = mapped_column(JsonB, nullable=True)
 
     is_valid: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    # Liste d'erreurs de validation (JSONB pour requêtes Postgres natives)
-    validation_errors: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
+    # Liste d'erreurs de validation
+    validation_errors: Mapped[list[str] | None] = mapped_column(JsonB, nullable=True)
 
     uploaded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
