@@ -53,6 +53,22 @@ d'erreurs claires (ex: "Date d'obtention manquante", "Nom de l'étudiant illisib
 """
 
 
+def _mock_classification(expected_type: DocumentType | None) -> DocumentClassificationResult:
+    """Résultat fictif réaliste — utilisé en DEMO_MODE pour éviter l'appel API."""
+    doc_type = expected_type or DocumentType.DIPLOME
+    return DocumentClassificationResult(
+        type=doc_type,
+        confidence=0.92,
+        is_valid=True,
+        errors=[],
+        extracted_fields={
+            "student_name": "Étudiant Demo",
+            "date": "2024-06-15",
+            "institution": "Université Demo",
+        },
+    )
+
+
 class AIClassifier:
     """Wrapper autour du client Anthropic Claude."""
 
@@ -73,6 +89,11 @@ class AIClassifier:
 
         expected_type : indice fourni par l'étudiant (peut être contredit par l'IA).
         """
+        # Mode démo : pas d'appel API
+        if settings.DEMO_MODE:
+            logger.info("[DEMO] Classification mockée pour type=%s", expected_type)
+            return _mock_classification(expected_type)
+
         # Si le texte est vide, on conclut sans appeler l'API
         if not ocr_text or not ocr_text.strip():
             return DocumentClassificationResult(

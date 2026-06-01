@@ -243,6 +243,16 @@ class WhatsAppBot:
     def send_message(self, to_number: str, text: str) -> str | None:
         """Envoie un message WhatsApp via Twilio. Retourne le SID Twilio."""
         to = to_number if to_number.startswith("whatsapp:") else f"whatsapp:{to_number}"
+
+        if settings.DEMO_MODE:
+            logger.info(
+                "[DEMO] WhatsApp → %s :\n%s\n%s",
+                to,
+                "-" * 40,
+                text,
+            )
+            return "DEMO_SID"
+
         try:
             msg = self.client.messages.create(body=text, from_=self.from_number, to=to)
             logger.info("Message WhatsApp envoyé à %s (sid=%s)", to, msg.sid)
