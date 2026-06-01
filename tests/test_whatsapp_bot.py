@@ -11,6 +11,8 @@ from app.models.application import Application, ApplicationStatus
 from app.models.document import Document, DocumentType
 from app.models.university import University
 from app.services.whatsapp_bot import ConversationState, WhatsAppBot
+import app.workers.ocr_tasks  # Fix mock.patch import
+
 
 
 # ---------------------------------------------------------------------------
