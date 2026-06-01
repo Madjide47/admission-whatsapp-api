@@ -1,0 +1,82 @@
+version: "3.9"
+
+# ============================================================
+# Docker Compose — Surcharge production
+# Usage : docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Différences avec dev :
+#  - Pas de --reload, gunicorn avec workers multiples
+#  - Pas de bind-mount du code (image figée)
+#  - Nginx en front avec TLS terminé en amont (load balancer / cert-manager)
+#  - Postgres et Redis ne sont PAS exposés sur le réseau hôte
+# ============================================================
+
+services:
+  postgres:
+    ports: []  # Pas d'exposition publique en prod
+    restart: always
+
+  redis:
+    ports: []
+    restart: always
+
+  api:
+    restart: always
+    volumes: []  # Image figée, pas de bind-mount
+    command: >
+      sh -c "alembic upgrade head &&
+             gunicorn app.main:app
+             --workers 4
+             --worker-class uvicorn.workers.UvicornWorker
+             --bind 0.0.0.0:8000
+             --access-logfile -
+             --error-logfile -
+             --timeout 60"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  worker-ocr:
+    restart: always
+    volumes: []
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  worker-ai:
+    restart: always
+    volumes: []
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  worker-webhook:
+    restart: always
+    volumes: []
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  worker-beat:
+    restart: always
+    volumes: []
+
+  # ---------- Reverse proxy Nginx ----------
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: admission_nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - api

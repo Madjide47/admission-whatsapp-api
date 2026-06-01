@@ -1,0 +1,89 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+*.egg
+.eggs/
+build/
+dist/
+develop-eggs/
+downloads/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+.installed.cfg
+MANIFEST.in
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Environnement virtuel
+.venv/
+venv/
+env/
+ENV/
+
+# Variables d'environnement (jamais commiter de secrets)
+.env
+.env.local
+.env.*.local
+
+# Credentials Google Cloud
+*-credentials.json
+gcs-key.json
+service-account*.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Tests & coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Mypy / Ruff
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints
+
+# Logs
+*.log
+logs/
+
+# Docker / Postgres
+postgres_data/
+redis_data/
+
+# Alembic — on garde versions/ mais pas les caches locaux
+alembic/versions/__pycache__/
+
+# OS
+*.bak
+*.tmp
+
+# Stockage local (mode demo)
+uploads/

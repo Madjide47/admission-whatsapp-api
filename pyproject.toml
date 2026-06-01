@@ -1,0 +1,79 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "admission-whatsapp-api"
+version = "1.0.0"
+description = "API SaaS d'admission universitaire via WhatsApp — collecte, OCR, classification IA et webhooks signés"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [{ name = "Madjid" }]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+exclude = ["tests*", "alembic*", "docker*"]
+
+# ============ Ruff (lint + format) ============
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "SIM", # flake8-simplify
+    "RUF", # ruff-specific
+]
+ignore = [
+    "E501",  # line-too-long (géré par formatter)
+    "B008",  # function-call-default-argument (autorisé pour FastAPI Depends)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+"alembic/env.py" = ["E402"]
+
+# ============ Mypy ============
+[tool.mypy]
+python_version = "3.11"
+strict = false
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+exclude = ["alembic/versions/", "tests/"]
+
+# ============ Pytest ============
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+markers = [
+    "integration: tests d'intégration nécessitant DB/Redis",
+    "slow: tests lents (OCR, IA)",
+]
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/workers/celery_app.py", "tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]

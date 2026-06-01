@@ -1,0 +1,58 @@
+"""Tests du service OCR — uniquement la logique de routage (image vs PDF).
+
+Les appels réels à Tesseract sont monkey-patchés : on ne dépend pas
+d'une installation locale de Tesseract pour passer ces tests.
+"""
+import io
+
+import pytest
+from PIL import Image
+
+from app.services.ocr_service import OCRService
+
+
+@pytest.fixture()
+def ocr_service():
+    return OCRService(lang="eng")
+
+
+def _make_png_bytes(text_hint: str = "test") -> bytes:
+    """Crée un PNG 100x40 blanc (sans texte réel — l'OCR sera mocké)."""
+    buf = io.BytesIO()
+    Image.new("RGB", (100, 40), color="white").save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def test_extract_from_image_returns_string(ocr_service, monkeypatch):
+    """Une image PNG est routée vers _extract_from_image."""
+    monkeypatch.setattr(
+        "app.services.ocr_service.pytesseract.image_to_string",
+        lambda img, lang: "Texte simulé extrait par OCR",
+    )
+    text = ocr_service.extract_text(_make_png_bytes(), mime_type="image/png")
+    assert "Texte simulé" in text
+
+
+def test_extract_from_pdf_routes_to_pdf_handler(ocr_service, monkeypatch):
+    """Le mime application/pdf doit déclencher la conversion PDF→image."""
+    captured = {}
+
+    def fake_convert(content, **kwargs):
+        captured["called"] = True
+        return [Image.new("RGB", (50, 50), color="white")]
+
+    monkeypatch.setattr("app.services.ocr_service.convert_from_bytes", fake_convert)
+    monkeypatch.setattr(
+        "app.services.ocr_service.pytesseract.image_to_string",
+        lambda img, lang: "Page de PDF",
+    )
+
+    text = ocr_service.extract_text(b"%PDF-1.4 fake content", mime_type="application/pdf")
+    assert captured.get("called") is True
+    assert "Page de PDF" in text
+
+
+def test_extract_empty_on_corrupted_file(ocr_service, monkeypatch):
+    """Un fichier corrompu ne doit pas lever — retour string vide."""
+    text = ocr_service.extract_text(b"pas une image", mime_type="image/png")
+    assert text == ""
