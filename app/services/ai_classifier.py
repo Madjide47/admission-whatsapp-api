@@ -54,18 +54,68 @@ d'erreurs claires (ex: "Date d'obtention manquante", "Nom de l'étudiant illisib
 
 
 def _mock_classification(expected_type: DocumentType | None) -> DocumentClassificationResult:
-    """Résultat fictif réaliste — utilisé en DEMO_MODE pour éviter l'appel API."""
+    """Résultat simulé réaliste par type — utilisé quand AI_MOCK=true."""
     doc_type = expected_type or DocumentType.DIPLOME
+
+    mock_data = {
+        DocumentType.DIPLOME: {
+            "confidence": 0.94,
+            "is_valid": True,
+            "errors": [],
+            "extracted_fields": {
+                "student_name": "Étudiant Demo",
+                "date": "2024-06-15",
+                "institution": "Lycée Général Demo",
+                "additional": {"mention": "Bien", "serie": "D"},
+            },
+        },
+        DocumentType.RELEVE_NOTES: {
+            "confidence": 0.91,
+            "is_valid": True,
+            "errors": [],
+            "extracted_fields": {
+                "student_name": "Étudiant Demo",
+                "date": "2023-2024",
+                "institution": "Université Demo",
+                "additional": {"moyenne": "14.5/20"},
+            },
+        },
+        DocumentType.CARTE_IDENTITE: {
+            "confidence": 0.96,
+            "is_valid": True,
+            "errors": [],
+            "extracted_fields": {
+                "student_name": "Étudiant Demo",
+                "date": "1999-03-10",
+                "institution": None,
+                "additional": {"numero": "TG123456789"},
+            },
+        },
+        DocumentType.PHOTO: {
+            "confidence": 0.88,
+            "is_valid": True,
+            "errors": [],
+            "extracted_fields": {
+                "student_name": None,
+                "date": None,
+                "institution": None,
+            },
+        },
+        DocumentType.AUTRE: {
+            "confidence": 0.45,
+            "is_valid": False,
+            "errors": ["Type de document non reconnu", "Document non attendu pour cette candidature"],
+            "extracted_fields": {},
+        },
+    }
+
+    data = mock_data.get(doc_type, mock_data[DocumentType.AUTRE])
     return DocumentClassificationResult(
         type=doc_type,
-        confidence=0.92,
-        is_valid=True,
-        errors=[],
-        extracted_fields={
-            "student_name": "Étudiant Demo",
-            "date": "2024-06-15",
-            "institution": "Université Demo",
-        },
+        confidence=data["confidence"],
+        is_valid=data["is_valid"],
+        errors=data["errors"],
+        extracted_fields=data["extracted_fields"],
     )
 
 
@@ -89,9 +139,9 @@ class AIClassifier:
 
         expected_type : indice fourni par l'étudiant (peut être contredit par l'IA).
         """
-        # Mode démo : pas d'appel API
-        if settings.DEMO_MODE:
-            logger.info("[DEMO] Classification mockée pour type=%s", expected_type)
+        # Mode démo ou AI_MOCK : pas d'appel API
+        if settings.DEMO_MODE or settings.AI_MOCK:
+            logger.info("[MOCK] Classification simulée pour type=%s", expected_type)
             return _mock_classification(expected_type)
 
         # Si le texte est vide, on conclut sans appeler l'API

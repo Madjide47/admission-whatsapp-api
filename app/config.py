@@ -86,6 +86,9 @@ class Settings(BaseSettings):
     # Stockage local même si DEMO_MODE=false (utile : Twilio réel + pas de GCS)
     LOCAL_STORAGE: bool = False
 
+    # Mock IA même si DEMO_MODE=false (utile : pas de clé Anthropic payante)
+    AI_MOCK: bool = False
+
     # ---------------- Calculés / dérivés ----------------
     @property
     def is_production(self) -> bool:
