@@ -153,6 +153,9 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 app.include_router(api_v1_router, prefix="/api/v1", tags=["v1"])
 app.include_router(whatsapp_router, prefix="/whatsapp", tags=["whatsapp"])
 
+from app.admin.router import router as admin_router  # noqa: E402
+app.include_router(admin_router)
+
 
 @app.get("/health", tags=["system"])
 async def health() -> dict:

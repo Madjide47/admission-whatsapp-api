@@ -83,6 +83,10 @@ class Settings(BaseSettings):
     # Active les stubs locaux : Twilio → console, GCS → filesystem, IA → mock
     DEMO_MODE: bool = False
 
+    # ---------------- Interface Admin ----------------
+    ADMIN_USERNAME: str = "admin"
+    ADMIN_PASSWORD: str = ""  # obligatoire en production
+
     # ---------------- Calculés / dérivés ----------------
     @property
     def is_production(self) -> bool:
