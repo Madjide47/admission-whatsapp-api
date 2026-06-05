@@ -122,11 +122,11 @@ _storage_service: StorageService | LocalStorageService | None = None
 
 
 def get_storage_service() -> StorageService | LocalStorageService:
-    """Retourne le singleton — LocalStorageService en mode démo, GCS sinon."""
+    """Retourne le singleton — LocalStorageService en mode démo ou LOCAL_STORAGE, GCS sinon."""
     global _storage_service
     if _storage_service is None:
-        if settings.DEMO_MODE:
-            logger.info("[DEMO] Stockage local activé (pas de GCS)")
+        if settings.DEMO_MODE or settings.LOCAL_STORAGE:
+            logger.info("[LOCAL] Stockage local activé (pas de GCS)")
             _storage_service = LocalStorageService()
         else:
             _storage_service = StorageService()

@@ -84,3 +84,6 @@ alembic/versions/__pycache__/
 # OS
 *.bak
 *.tmp
+
+# Stockage local (mode demo)
+uploads/

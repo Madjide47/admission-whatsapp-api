@@ -17,19 +17,6 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # ---------- ENUMs ----------
-    op.execute(
-        "CREATE TYPE application_status_enum AS ENUM "
-        "('COLLECTING','VALIDATING','VALIDATED','SENT_TO_UNIVERSITY','ACCEPTED','REJECTED')"
-    )
-    op.execute(
-        "CREATE TYPE document_type_enum AS ENUM "
-        "('DIPLOME','RELEVE_NOTES','CARTE_IDENTITE','PHOTO','AUTRE')"
-    )
-    op.execute(
-        "CREATE TYPE webhook_status_enum AS ENUM "
-        "('PENDING','SUCCESS','FAILED')"
-    )
 
     # ---------- universities ----------
     op.create_table(
@@ -87,7 +74,6 @@ def upgrade() -> None:
                 "ACCEPTED",
                 "REJECTED",
                 name="application_status_enum",
-                create_type=False,
             ),
             nullable=False,
             server_default="COLLECTING",
@@ -135,7 +121,6 @@ def upgrade() -> None:
                 "PHOTO",
                 "AUTRE",
                 name="document_type_enum",
-                create_type=False,
             ),
             nullable=False,
             server_default="AUTRE",
@@ -187,7 +172,6 @@ def upgrade() -> None:
                 "SUCCESS",
                 "FAILED",
                 name="webhook_status_enum",
-                create_type=False,
             ),
             nullable=False,
             server_default="PENDING",
