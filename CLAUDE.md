@@ -8,22 +8,20 @@
 
 ## 1. IDENTITÉ ET RÔLE
 
-Je suis **Dev 2 — IA / WhatsApp Specialist** dans une équipe de 3 développeurs.
+Je suis **Dev 3 — Documentation et Intégration** dans une équipe de 3 développeurs.
 
 **Mon périmètre :**
-- Bot WhatsApp conversationnel (machine à états)
-- Service OCR (Tesseract)
-- Service de classification IA (Anthropic Claude)
-- Règles de validation des dossiers
-- Workers Celery asynchrones (files ocr et ai)
-- Endpoint de réception WhatsApp (Twilio webhook)
+- Configuration Swagger / OpenAPI (security schemes, tags, pré-remplissage credentials)
+- Documentation d'intégration (`docs/INTEGRATION.md`, `docs/IMPORT.md`, `docs/webhooks.md`)
+- Collection Postman v2 (`docs/postman/`)
+- Validation import Boussole.in (tests + procédure)
+- Mise à jour du cahier des charges et diagrammes v2
 
 **Ce qui n'est PAS mon périmètre :**
-- API REST des candidatures, documents, décisions, webhooks (Dev 1 — Backend)
-- Authentification API Key/Secret (Dev 1)
-- Moteur de webhooks et signature HMAC (Dev 1)
-- Infrastructure Docker, Google Cloud, Nginx (Dev 1)
-- Documentation API Swagger, exemples d'intégration, SDK, Postman (Dev 3)
+- Tables, migrations Alembic, endpoints admin REST (Dev 1 — Backend)
+- Bot WhatsApp, OCR, classification IA, workers Celery (Dev 2 — IA/WhatsApp)
+- Infrastructure Docker, GCS, Nginx (Dev 1)
+- Script `import_boussole.py` (Dev 1 — je valide et documente)
 
 ---
 
@@ -789,3 +787,35 @@ accept_content = ["json"]
 - **UUID** pour les identifiants (pas auto-incrément)
 - **Tests** : pytest, Tesseract et Twilio mockés
 - **Gestion d'erreur** : logger et continuer, ne JAMAIS crasher l'API
+
+---
+
+## 16. TÂCHES V2 — DEV 3
+
+### Phase 1 — Fondations doc
+- [x] Mettre à jour CLAUDE.md (rôle Dev 3)
+- [x] Squelette `docs/INTEGRATION.md` et `docs/IMPORT.md`
+
+### Phase 2 — Swagger
+- [x] Security schemes `X-API-Key` + `X-API-Secret` (`app/openapi.py`)
+- [x] Tags : Admin, Applications, Documents, Decisions, Webhooks, WhatsApp, System
+- [x] Pré-remplissage credentials via `SWAGGER_DEMO_API_KEY` / `SWAGGER_DEMO_API_SECRET`
+- [x] Tests `tests/test_openapi.py`
+
+### Phase 3 — Intégration
+- [x] Collection Postman v2 (`docs/postman/`)
+- [ ] Valider import Boussole.in (bloqué : script Dev 1)
+- [ ] Finaliser INTEGRATION.md quand endpoints admin livrés
+
+### Phase 4 — Finalisation
+- [ ] Mettre à jour diagrammes séquences / cas d'utilisation v2
+- [ ] Cahier des charges technique v2
+
+### Dépendances Dev 3
+
+| Tâche bloquée | Dépend de |
+|---------------|-----------|
+| Postman scénario complet | Endpoints admin (Dev 1) |
+| IMPORT.md procédure réelle | `scripts/import_boussole.py` (Dev 1) |
+| Doc formulaire publié | Tables `admission_forms`, `form_fields` (Dev 1) |
+| Tests bout en bout doc | Seed endpoint + bot v2 stable (Dev 1 + Dev 2) |

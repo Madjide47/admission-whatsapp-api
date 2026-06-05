@@ -86,6 +86,15 @@ POST https://votre-domaine.com/whatsapp/incoming
 
 ---
 
+## Documentation d'intégration
+
+- [Guide d'intégration v2](docs/INTEGRATION.md) — auth, admin, webhooks, scénarios de test
+- [Import Boussole.in](docs/IMPORT.md) — procédure et validation
+- [Collection Postman v2](docs/postman/admission-api-v2.postman_collection.json)
+- [Webhooks](docs/webhooks.md)
+
+---
+
 ## Obtenir une clé API (université cliente)
 
 Un endpoint d'administration n'est pas encore exposé via HTTP — pour l'instant, l'inscription d'une université se fait par script :

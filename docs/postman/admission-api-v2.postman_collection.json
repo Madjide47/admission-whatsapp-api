@@ -1,0 +1,202 @@
+{
+  "info": {
+    "name": "Admission WhatsApp API v2",
+    "description": "Collection v2 — Admin, candidatures, webhooks.\n\nScénario : Seed → auth → applications → décision.\nMaintenu par Dev 3.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "api_url", "value": "http://localhost:8000" },
+    { "key": "api_key", "value": "" },
+    { "key": "api_secret", "value": "" },
+    { "key": "program_id", "value": "" },
+    { "key": "application_id", "value": "" }
+  ],
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      { "key": "key", "value": "X-API-Key", "type": "string" },
+      { "key": "value", "value": "{{api_key}}", "type": "string" },
+      { "key": "in", "value": "header", "type": "string" }
+    ]
+  },
+  "item": [
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": "{{api_url}}/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Endpoints v2 — livraison Dev 1. Mettre à jour quand disponibles.",
+      "item": [
+        {
+          "name": "Seed university (dev only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "  const d = pm.response.json().data;",
+                  "  if (d.api_key) pm.environment.set('api_key', d.api_key);",
+                  "  if (d.api_secret) pm.environment.set('api_secret', d.api_secret);",
+                  "  if (d.program_id) pm.environment.set('program_id', d.program_id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [],
+            "url": "{{api_url}}/api/v1/admin/seed-university"
+          }
+        },
+        {
+          "name": "List programs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-API-Secret", "value": "{{api_secret}}", "type": "text" }
+            ],
+            "url": "{{api_url}}/api/v1/admin/programs"
+          }
+        },
+        {
+          "name": "Create program",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-Secret", "value": "{{api_secret}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Licence Informatique\",\n  \"description\": \"Formation dev logiciel\",\n  \"is_active\": true\n}"
+            },
+            "url": "{{api_url}}/api/v1/admin/programs"
+          }
+        },
+        {
+          "name": "Get form config",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-API-Secret", "value": "{{api_secret}}", "type": "text" }
+            ],
+            "url": "{{api_url}}/api/v1/admin/forms/{{program_id}}"
+          }
+        },
+        {
+          "name": "Update form",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "X-API-Secret", "value": "{{api_secret}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": [\n    {\n      \"label\": \"Email\",\n      \"type\": \"email\",\n      \"order\": 1,\n      \"is_required\": true,\n      \"validation_regex\": null\n    }\n  ],\n  \"required_documents\": [\n    {\n      \"document_type\": \"DIPLOME\",\n      \"label\": \"Diplôme du baccalauréat\",\n      \"order\": 1,\n      \"is_required\": true\n    },\n    {\n      \"document_type\": \"CARTE_IDENTITE\",\n      \"label\": \"Carte d'identité\",\n      \"order\": 2,\n      \"is_required\": true\n    }\n  ]\n}"
+            },
+            "url": "{{api_url}}/api/v1/admin/forms/{{program_id}}"
+          }
+        },
+        {
+          "name": "Publish form",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-Secret", "value": "{{api_secret}}", "type": "text" }
+            ],
+            "url": "{{api_url}}/api/v1/admin/forms/{{program_id}}/publish"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Applications",
+      "item": [
+        {
+          "name": "List applications",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-API-Secret", "value": "{{api_secret}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{api_url}}/api/v1/applications?limit=20&offset=0",
+              "host": ["{{api_url}}"],
+              "path": ["api", "v1", "applications"],
+              "query": [
+                { "key": "limit", "value": "20" },
+                { "key": "offset", "value": "0" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get application",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-API-Secret", "value": "{{api_secret}}", "type": "text" }
+            ],
+            "url": "{{api_url}}/api/v1/applications/{{application_id}}"
+          }
+        },
+        {
+          "name": "Post decision",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-API-Secret", "value": "{{api_secret}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"ACCEPTED\",\n  \"comment\": \"Bienvenue !\"\n}"
+            },
+            "url": "{{api_url}}/api/v1/applications/{{application_id}}/decision"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "Get webhook config",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-API-Secret", "value": "{{api_secret}}", "type": "text" }
+            ],
+            "url": "{{api_url}}/api/v1/webhooks"
+          }
+        },
+        {
+          "name": "List deliveries",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-API-Secret", "value": "{{api_secret}}", "type": "text" }
+            ],
+            "url": "{{api_url}}/api/v1/webhooks/deliveries"
+          }
+        }
+      ]
+    }
+  ]
+}

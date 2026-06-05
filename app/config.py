@@ -97,6 +97,11 @@ class Settings(BaseSettings):
     # Mock IA même si DEMO_MODE=false (utile : pas de clé Anthropic payante)
     AI_MOCK: bool = False
 
+    # ---------------- Swagger (dev uniquement) ----------------
+    # Credentials pré-remplis dans Swagger UI — utiliser ceux du seed ou create_university
+    SWAGGER_DEMO_API_KEY: str = ""
+    SWAGGER_DEMO_API_SECRET: str = ""
+
     # ---------------- Calculés / dérivés ----------------
     @property
     def is_production(self) -> bool:

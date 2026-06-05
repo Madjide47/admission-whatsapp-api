@@ -10,7 +10,7 @@ import sentry_sdk
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -21,6 +21,7 @@ from app import __version__
 from app.api.v1.router import api_v1_router
 from app.api.whatsapp.twilio_webhook import router as whatsapp_router
 from app.config import settings
+from app.openapi import build_openapi_schema, get_swagger_ui
 
 # ---------------- Logging ----------------
 logging.basicConfig(
@@ -74,11 +75,18 @@ app = FastAPI(
         "et webhooks signés HMAC vers les universités clientes."
     ),
     version=__version__,
-    docs_url=None if settings.is_production else "/docs",
+    docs_url=None,
     redoc_url=None if settings.is_production else "/redoc",
     openapi_url=None if settings.is_production else "/openapi.json",
     lifespan=lifespan,
 )
+
+
+def custom_openapi():
+    return build_openapi_schema(app)
+
+
+app.openapi = custom_openapi  # type: ignore[method-assign]
 
 # Attacher le rate limiter à l'app
 app.state.limiter = limiter
@@ -150,11 +158,19 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 
 
 # ---------------- Routes ----------------
-app.include_router(api_v1_router, prefix="/api/v1", tags=["v1"])
-app.include_router(whatsapp_router, prefix="/whatsapp", tags=["whatsapp"])
+app.include_router(api_v1_router, prefix="/api/v1")
+app.include_router(whatsapp_router, prefix="/whatsapp", tags=["WhatsApp"])
 
 
-@app.get("/health", tags=["system"])
+if not settings.is_production:
+
+    @app.get("/docs", include_in_schema=False)
+    async def swagger_ui() -> HTMLResponse:
+        """Swagger UI avec security schemes et credentials pré-remplis."""
+        return get_swagger_ui()
+
+
+@app.get("/health", tags=["System"])
 async def health() -> dict:
     """Endpoint de santé — utilisé par les load balancers."""
     return {"status": "ok", "version": __version__}

@@ -6,14 +6,14 @@ from app.api.v1 import applications, decisions, documents, webhooks
 api_v1_router = APIRouter()
 
 api_v1_router.include_router(
-    applications.router, prefix="/applications", tags=["applications"]
+    applications.router, prefix="/applications", tags=["Applications"]
 )
 api_v1_router.include_router(
-    documents.router, prefix="/applications", tags=["documents"]
+    documents.router, prefix="/applications", tags=["Documents"]
 )
 api_v1_router.include_router(
-    decisions.router, prefix="/applications", tags=["decisions"]
+    decisions.router, prefix="/applications", tags=["Decisions"]
 )
 api_v1_router.include_router(
-    webhooks.router, prefix="/webhooks", tags=["webhooks"]
+    webhooks.router, prefix="/webhooks", tags=["Webhooks"]
 )
