@@ -38,7 +38,7 @@ def test_create_application_success(client, auth_headers):
     data = r.json()
     assert data["success"] is True
     assert data["data"]["student_name"] == "Kofi Mensah"
-    assert data["data"]["status"] == "COLLECTING"
+    assert data["data"]["status"] == "COLLECTING_FIELDS"
 
 
 def test_list_applications_filters(client, auth_headers):

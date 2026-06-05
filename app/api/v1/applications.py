@@ -51,7 +51,7 @@ def create_application(
         student_name=payload.student_name,
         student_email=payload.student_email,
         program=payload.program,
-        status=ApplicationStatus.COLLECTING,
+        status=ApplicationStatus.COLLECTING_FIELDS,
     )
     db.add(application)
     db.commit()

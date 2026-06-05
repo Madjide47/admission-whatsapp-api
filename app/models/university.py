@@ -56,6 +56,10 @@ class University(Base):
         back_populates="university",
         cascade="all, delete-orphan",
     )
+    programs: Mapped[list["Program"]] = relationship(  # type: ignore[name-defined]
+        back_populates="university",
+        cascade="all, delete-orphan",
+    )
     webhook_deliveries: Mapped[list["WebhookDelivery"]] = relationship(  # type: ignore[name-defined]
         back_populates="university",
         cascade="all, delete-orphan",

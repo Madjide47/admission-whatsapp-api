@@ -308,7 +308,10 @@ class WhatsAppBot:
             .where(
                 Application.status.in_(
                     [
-                        ApplicationStatus.COLLECTING,
+                        ApplicationStatus.CHOOSING_UNIVERSITY,
+                        ApplicationStatus.CHOOSING_PROGRAM,
+                        ApplicationStatus.COLLECTING_FIELDS,
+                        ApplicationStatus.COLLECTING_DOCUMENTS,
                         ApplicationStatus.VALIDATING,
                         ApplicationStatus.VALIDATED,
                         ApplicationStatus.SENT_TO_UNIVERSITY,
@@ -337,7 +340,7 @@ class WhatsAppBot:
         application = Application(
             university_id=university.id,
             student_phone=phone,
-            status=ApplicationStatus.COLLECTING,
+            status=ApplicationStatus.CHOOSING_UNIVERSITY,
             conversation_state=ConversationState.WELCOME.value,
         )
         self.db.add(application)

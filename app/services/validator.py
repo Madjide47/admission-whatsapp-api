@@ -84,8 +84,8 @@ class ApplicationValidator:
         if is_complete:
             application.status = ApplicationStatus.VALIDATED
         else:
-            # On reste en COLLECTING tant que tout n'est pas bon
-            application.status = ApplicationStatus.COLLECTING
+            # On reste en COLLECTING_DOCUMENTS tant que tout n'est pas bon
+            application.status = ApplicationStatus.COLLECTING_DOCUMENTS
 
         self.db.add(application)
         self.db.commit()

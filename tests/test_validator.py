@@ -37,7 +37,7 @@ def base_application(db_session, university) -> Application:
         student_phone="+22890111111",
         student_name="Aminata Diallo",
         program="Licence Droit",
-        status=ApplicationStatus.COLLECTING,
+        status=ApplicationStatus.COLLECTING_FIELDS,
         conversation_state="COLLECT_DOCS",
     )
     db_session.add(app)
@@ -148,7 +148,7 @@ def test_apply_validation_stays_collecting_if_incomplete(db_session, base_applic
     # Aucun document ajouté
     validator = ApplicationValidator(db_session)
     result = validator.apply_validation(base_application)
-    assert result.status == ApplicationStatus.COLLECTING
+    assert result.status == ApplicationStatus.COLLECTING_DOCUMENTS
     assert "Problèmes" in result.ai_notes
 
 

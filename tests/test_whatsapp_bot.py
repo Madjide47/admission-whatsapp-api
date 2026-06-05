@@ -55,7 +55,7 @@ def application(db_session, university) -> Application:
         id=uuid.uuid4(),
         university_id=university.id,
         student_phone="+22890000001",
-        status=ApplicationStatus.COLLECTING,
+        status=ApplicationStatus.CHOOSING_UNIVERSITY,
         conversation_state=ConversationState.WELCOME.value,
     )
     db_session.add(app)
