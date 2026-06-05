@@ -1,24 +1,40 @@
 """Service de validation globale d'une candidature.
 
 Détermine si un dossier est complet et calcule un score de validation global.
+
+Stratégie de chargement des documents requis :
+  1. Cherche un enregistrement Program correspondant au programme de l'application.
+  2. Si trouvé, charge les RequiredDocument (is_required=True) triés par order.
+  3. Si introuvable ou vide → fallback sur REQUIRED_DOCUMENT_TYPES (set hardcodé).
 """
 import logging
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.application import Application, ApplicationStatus
 from app.models.document import Document, DocumentType
+from app.models.program import Program
+from app.models.required_document import RequiredDocument
 
 logger = logging.getLogger(__name__)
 
 
-# Documents obligatoires pour qu'un dossier soit considéré complet
+# Documents obligatoires par défaut — utilisés quand aucun RequiredDocument n'est configuré
 REQUIRED_DOCUMENT_TYPES: set[DocumentType] = {
     DocumentType.DIPLOME,
     DocumentType.RELEVE_NOTES,
     DocumentType.CARTE_IDENTITE,
     DocumentType.PHOTO,
 }
+
+# Ordre de référence pour le fallback (cohérent avec whatsapp_bot)
+_REQUIRED_ORDERED: list[DocumentType] = [
+    DocumentType.DIPLOME,
+    DocumentType.RELEVE_NOTES,
+    DocumentType.CARTE_IDENTITE,
+    DocumentType.PHOTO,
+]
 
 
 class ApplicationValidator:
@@ -27,28 +43,31 @@ class ApplicationValidator:
     def __init__(self, db: Session) -> None:
         self.db = db
 
+    # ------------------------------------------------------------------
+    # API publique
+    # ------------------------------------------------------------------
+
     def validate(self, application: Application) -> tuple[bool, float, list[str]]:
         """Retourne (is_complete, score, raisons).
 
         - is_complete : tous les documents requis sont présents et valides
-        - score : moyenne pondérée des confidences IA
-        - raisons : liste lisible des problèmes restants
+        - score       : moyenne des confidences IA (0.0 – 1.0)
+        - raisons     : liste lisible des problèmes détectés
         """
         reasons: list[str] = []
 
-        # Champs étudiant obligatoires
         if not application.student_name:
             reasons.append("Nom de l'étudiant manquant.")
         if not application.program:
             reasons.append("Programme universitaire non précisé.")
 
-        # Index par type
+        required_types = self._load_required_doc_types(application)
+
         docs_by_type: dict[DocumentType, list[Document]] = {}
         for doc in application.documents:
             docs_by_type.setdefault(doc.document_type, []).append(doc)
 
-        # Vérification des types requis
-        for required in REQUIRED_DOCUMENT_TYPES:
+        for required in required_types:
             docs = docs_by_type.get(required, [])
             if not docs:
                 reasons.append(f"Document manquant : {required.value}.")
@@ -60,15 +79,13 @@ class ApplicationValidator:
                     f"({len(docs)} fourni(s) mais invalide(s))."
                 )
 
-        # Score = moyenne des confidences extraites
         confidences: list[float] = []
         for doc in application.documents:
-            if doc.classification_result and "confidence" in doc.classification_result:
+            if doc.is_valid and doc.classification_result and "confidence" in doc.classification_result:
                 confidences.append(float(doc.classification_result["confidence"]))
         score = sum(confidences) / len(confidences) if confidences else 0.0
 
-        is_complete = len(reasons) == 0
-        return is_complete, round(score, 3), reasons
+        return len(reasons) == 0, round(score, 3), reasons
 
     def apply_validation(self, application: Application) -> Application:
         """Effectue la validation et met à jour le statut de la candidature."""
@@ -84,7 +101,6 @@ class ApplicationValidator:
         if is_complete:
             application.status = ApplicationStatus.VALIDATED
         else:
-            # On reste en COLLECTING tant que tout n'est pas bon
             application.status = ApplicationStatus.COLLECTING
 
         self.db.add(application)
@@ -99,3 +115,62 @@ class ApplicationValidator:
             len(reasons),
         )
         return application
+
+    def get_required_doc_types(self, application: Application) -> list[DocumentType]:
+        """Retourne la liste ordonnée des types requis pour cette candidature.
+
+        Utilisable par le bot et les workers pour connaître l'ordre de demande.
+        """
+        return self._load_required_doc_types(application)
+
+    # ------------------------------------------------------------------
+    # Chargement dynamique
+    # ------------------------------------------------------------------
+
+    def _load_required_doc_types(self, application: Application) -> list[DocumentType]:
+        """Charge les types requis depuis required_documents, ou retourne le fallback.
+
+        Fallback sur REQUIRED_DOCUMENT_TYPES si :
+          - application.program est vide
+          - aucun Program correspondant en base
+          - aucun RequiredDocument configuré pour ce programme
+          - erreur DB inattendue
+        """
+        if not application.program or not application.university_id:
+            return _REQUIRED_ORDERED[:]
+
+        try:
+            program = self.db.execute(
+                select(Program).where(
+                    Program.university_id == application.university_id,
+                    Program.name == application.program,
+                    Program.is_active.is_(True),
+                )
+            ).scalar_one_or_none()
+
+            if program is None:
+                return _REQUIRED_ORDERED[:]
+
+            required = list(
+                self.db.execute(
+                    select(RequiredDocument)
+                    .where(
+                        RequiredDocument.program_id == program.id,
+                        RequiredDocument.is_required.is_(True),
+                    )
+                    .order_by(RequiredDocument.order, RequiredDocument.document_type)
+                ).scalars().all()
+            )
+
+            if not required:
+                return _REQUIRED_ORDERED[:]
+
+            return [rd.document_type for rd in required]
+
+        except Exception:
+            logger.warning(
+                "Erreur chargement required_documents pour app %s — fallback hardcodé",
+                application.id,
+                exc_info=True,
+            )
+            return _REQUIRED_ORDERED[:]

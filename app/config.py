@@ -47,11 +47,19 @@ class Settings(BaseSettings):
         description="Format requis: whatsapp:+14155238886",
     )
 
+    # ---------------- Fournisseur IA ----------------
+    # "anthropic" (Claude) ou "gemini" (Gemini Flash)
+    AI_PROVIDER: Literal["anthropic", "gemini"] = "anthropic"
+
     # ---------------- Anthropic Claude ----------------
-    ANTHROPIC_API_KEY: str
+    ANTHROPIC_API_KEY: str = ""
     ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
     ANTHROPIC_MAX_TOKENS: int = 1024
     ANTHROPIC_TIMEOUT: int = 30
+
+    # ---------------- Google Gemini Flash ----------------
+    GOOGLE_AI_API_KEY: str = ""
+    GOOGLE_AI_MODEL: str = "gemini-2.0-flash"
 
     # ---------------- Google Cloud Storage ----------------
     GCS_BUCKET_NAME: str

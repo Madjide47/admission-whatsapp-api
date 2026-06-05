@@ -8,7 +8,7 @@ import logging
 import re
 from enum import Enum
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client as TwilioClient
@@ -16,6 +16,7 @@ from twilio.rest import Client as TwilioClient
 from app.config import settings
 from app.models.application import Application, ApplicationStatus
 from app.models.document import DocumentType
+from app.models.program import Program  # stub — TODO(dev1): migration 0002
 from app.models.university import University
 
 logger = logging.getLogger(__name__)
@@ -25,8 +26,11 @@ class ConversationState(str, Enum):
     """États de la machine de conversation WhatsApp."""
 
     WELCOME = "WELCOME"
+    COLLECT_INTEREST = "COLLECT_INTEREST"     # v2 : domaine d'intérêt pour filtrer les universités
+    CHOOSE_UNIVERSITY = "CHOOSE_UNIVERSITY"   # v2 : sélection université depuis une liste filtrée
     COLLECT_NAME = "COLLECT_NAME"
-    COLLECT_PROGRAM = "COLLECT_PROGRAM"
+    CHOOSE_PROGRAM = "CHOOSE_PROGRAM"         # v2 : sélection programme depuis une liste
+    COLLECT_PROGRAM = "COLLECT_PROGRAM"       # fallback texte libre (pas de programmes configurés)
     COLLECT_DOCS = "COLLECT_DOCS"
     WAITING_VALIDATION = "WAITING_VALIDATION"
     DONE = "DONE"
@@ -48,6 +52,61 @@ DOCUMENT_KEYWORDS: dict[str, DocumentType] = {
     "passeport": DocumentType.CARTE_IDENTITE,
     "photo": DocumentType.PHOTO,
 }
+
+# Étiquettes humaines pour chaque type de document
+DOCUMENT_LABELS: dict[DocumentType, str] = {
+    DocumentType.DIPLOME: "votre *diplôme* (ou attestation du baccalauréat)",
+    DocumentType.RELEVE_NOTES: "votre *relevé de notes*",
+    DocumentType.CARTE_IDENTITE: "votre *carte d'identité* (ou passeport)",
+    DocumentType.PHOTO: "une *photo d'identité* récente",
+}
+
+# Ordre dans lequel les documents sont demandés (séquentiel)
+REQUIRED_DOCUMENT_TYPES_ORDERED: list[DocumentType] = [
+    DocumentType.DIPLOME,
+    DocumentType.RELEVE_NOTES,
+    DocumentType.CARTE_IDENTITE,
+    DocumentType.PHOTO,
+]
+
+
+def get_next_required_document(
+    application: Application,
+    required_types: list[DocumentType] | None = None,
+) -> DocumentType | None:
+    """Retourne le prochain document requis non encore validé.
+
+    required_types : liste ordonnée à utiliser. Si None, fallback sur
+    REQUIRED_DOCUMENT_TYPES_ORDERED (hardcodé). Les workers passent None ;
+    le bot passe la liste chargée depuis required_documents via _get_required_doc_types.
+    """
+    types = required_types if required_types is not None else REQUIRED_DOCUMENT_TYPES_ORDERED
+    provided_valid = {d.document_type for d in application.documents if d.is_valid}
+    for doc_type in types:
+        if doc_type not in provided_valid:
+            return doc_type
+    return None
+
+
+def send_whatsapp(to_number: str, text: str) -> str | None:
+    """Envoie un message WhatsApp via Twilio sans session DB.
+
+    Utilisée par les workers Celery qui n'ont pas accès à l'instance WhatsAppBot.
+    """
+    to = to_number if to_number.startswith("whatsapp:") else f"whatsapp:{to_number}"
+
+    if settings.DEMO_MODE:
+        logger.info("[DEMO] WhatsApp → %s :\n%s\n%s", to, "-" * 40, text)
+        return "DEMO_SID"
+
+    try:
+        client = TwilioClient(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+        msg = client.messages.create(body=text, from_=settings.TWILIO_WHATSAPP_NUMBER, to=to)
+        logger.info("WhatsApp envoyé à %s (sid=%s)", to, msg.sid)
+        return msg.sid
+    except TwilioRestException as e:
+        logger.exception("Erreur envoi Twilio: %s", e)
+        return None
 
 
 class WhatsAppBot:
@@ -86,7 +145,10 @@ class WhatsAppBot:
         state = ConversationState(application.conversation_state or ConversationState.WELCOME.value)
         handler = {
             ConversationState.WELCOME: self._handle_welcome,
+            ConversationState.COLLECT_INTEREST: self._handle_collect_interest,
+            ConversationState.CHOOSE_UNIVERSITY: self._handle_choose_university,
             ConversationState.COLLECT_NAME: self._handle_collect_name,
+            ConversationState.CHOOSE_PROGRAM: self._handle_choose_program,
             ConversationState.COLLECT_PROGRAM: self._handle_collect_program,
             ConversationState.COLLECT_DOCS: self._handle_collect_docs,
             ConversationState.WAITING_VALIDATION: self._handle_waiting,
@@ -109,11 +171,9 @@ class WhatsAppBot:
     def _handle_welcome(self, application: Application, text: str) -> dict:
         lower = text.lower()
 
-        # Détection d'intention "statut" même au démarrage
         if re.search(r"\b(statut|status|où en|ou en)\b", lower):
             return self._send_status(application)
 
-        # Si le message ne contient pas un mot-clé déclencheur → invitation à démarrer
         if not self._TRIGGER_KEYWORDS.search(lower):
             self.send_message(
                 application.student_phone,
@@ -127,23 +187,133 @@ class WhatsAppBot:
             )
             return {"state": application.conversation_state, "action": "prompt_trigger"}
 
-        self.send_message(
-            application.student_phone,
-            "Bonjour ! 👋 Je suis l'assistant virtuel d'admission universitaire.\n\n"
-            "Je suis là pour vous aider à soumettre votre dossier de candidature "
-            "de façon simple et rapide, directement depuis WhatsApp.\n\n"
-            "Voici comment ça se passe :\n"
-            "1️⃣ Vous me donnez votre nom\n"
-            "2️⃣ Vous choisissez votre programme\n"
-            "3️⃣ Vous envoyez vos documents\n"
-            "4️⃣ Je les analyse automatiquement\n"
-            "5️⃣ L'université reçoit votre dossier et vous répond ici\n\n"
-            "Ça prend environ 5 minutes. C'est parti ! 🚀\n\n"
-            "Pour commencer, quel est votre *nom complet* ?",
-        )
+        domains = self._list_domains()
+
+        if domains:
+            # Domaines configurés → liste numérotée
+            lines = [
+                "Bonjour ! 👋 Je suis l'assistant d'admission universitaire.\n",
+                "Dans quel *domaine* souhaitez-vous poursuivre vos études ?\n",
+            ]
+            for i, d in enumerate(domains, start=1):
+                lines.append(f"{i}. {d}")
+            lines.append("\nRépondez avec le *numéro* de votre choix.")
+            self.send_message(application.student_phone, "\n".join(lines))
+            application.conversation_state = ConversationState.COLLECT_INTEREST.value
+            self.db.add(application)
+            self.db.commit()
+            return {"state": application.conversation_state, "action": "listed_domains"}
+
+        # Aucun domaine configuré → aller directement aux universités
+        universities = self._list_universities()
+        if not universities:
+            self.send_message(
+                application.student_phone,
+                "Désolé, aucune université n'est disponible pour le moment. 🙏",
+            )
+            return {"state": application.conversation_state, "action": "no_university"}
+
+        if len(universities) == 1:
+            application.university_id = universities[0].id
+            application.conversation_state = ConversationState.COLLECT_NAME.value
+            self.db.add(application)
+            self.db.commit()
+            self.send_message(
+                application.student_phone,
+                f"Bonjour ! 👋 Bienvenue à *{universities[0].name}*. "
+                "Je vais vous aider à soumettre votre dossier. 🚀\n\n"
+                "Pour commencer, quel est votre *nom complet* ?",
+            )
+            return {"state": application.conversation_state, "action": "asked_name"}
+
+        lines = ["Bonjour ! 👋 Dans quelle université souhaitez-vous postuler ?\n"]
+        for i, u in enumerate(universities, start=1):
+            lines.append(f"{i}. {u.name}")
+        lines.append("\nRépondez avec le *numéro* de votre choix.")
+        self.send_message(application.student_phone, "\n".join(lines))
+        application.conversation_state = ConversationState.CHOOSE_UNIVERSITY.value
+        self.db.add(application)
+        self.db.commit()
+        return {"state": application.conversation_state, "action": "listed_universities"}
+
+    def _handle_collect_interest(self, application: Application, text: str) -> dict:
+        domains = self._list_domains()
+        idx = self._parse_numeric_choice(text, len(domains))
+
+        if idx is None:
+            lines = [f"Merci de répondre avec un numéro entre 1 et {len(domains)}.\n"]
+            for i, d in enumerate(domains, start=1):
+                lines.append(f"{i}. {d}")
+            self.send_message(application.student_phone, "\n".join(lines))
+            return {"state": application.conversation_state, "action": "invalid_domain_choice"}
+
+        chosen_domain = domains[idx]
+        universities = self._find_universities_for_domain(chosen_domain)
+
+        if not universities:
+            universities = self._list_universities()
+
+        if len(universities) == 1:
+            # Sélection automatique de la seule université du domaine
+            application.university_id = universities[0].id
+            application.ai_notes = None
+            application.conversation_state = ConversationState.COLLECT_NAME.value
+            self.db.add(application)
+            self.db.commit()
+            self.send_message(
+                application.student_phone,
+                f"✅ Domaine *{chosen_domain}* sélectionné !\n"
+                f"Université : *{universities[0].name}*\n\n"
+                "Quel est votre *nom complet* ?",
+            )
+            return {"state": application.conversation_state, "action": "asked_name"}
+
+        lines = [
+            f"Voici les universités qui proposent des formations en *{chosen_domain}* :\n"
+        ]
+        for i, u in enumerate(universities, start=1):
+            lines.append(f"{i}. {u.name}")
+        lines.append("\nRépondez avec le *numéro* de votre choix.")
+        self.send_message(application.student_phone, "\n".join(lines))
+
+        application.ai_notes = chosen_domain
+        application.conversation_state = ConversationState.CHOOSE_UNIVERSITY.value
+        self.db.add(application)
+        self.db.commit()
+        return {
+            "state": application.conversation_state,
+            "action": "listed_universities",
+            "domain": chosen_domain,
+            "count": len(universities),
+        }
+
+    def _handle_choose_university(self, application: Application, text: str) -> dict:
+        # Reconstruire la même liste que celle montrée dans _handle_collect_interest
+        interest = application.ai_notes
+        if interest:
+            universities = self._find_universities_by_interest(interest) or self._list_universities()
+        else:
+            universities = self._list_universities()
+
+        idx = self._parse_numeric_choice(text, len(universities))
+
+        if idx is None:
+            lines = [f"Merci de répondre avec un numéro entre 1 et {len(universities)}.\n"]
+            for i, u in enumerate(universities, start=1):
+                lines.append(f"{i}. {u.name}")
+            self.send_message(application.student_phone, "\n".join(lines))
+            return {"state": application.conversation_state, "action": "invalid_university_choice"}
+
+        chosen = universities[idx]
+        application.university_id = chosen.id
+        application.ai_notes = None  # libère le stockage temporaire de l'intérêt
         application.conversation_state = ConversationState.COLLECT_NAME.value
         self.db.add(application)
         self.db.commit()
+        self.send_message(
+            application.student_phone,
+            f"✅ *{chosen.name}* sélectionnée !\n\nQuel est votre *nom complet* ?",
+        )
         return {"state": application.conversation_state, "action": "asked_name"}
 
     def _handle_collect_name(self, application: Application, text: str) -> dict:
@@ -155,17 +325,72 @@ class WhatsAppBot:
             return {"state": application.conversation_state, "action": "name_too_short"}
 
         application.student_name = text[:255]
-        application.conversation_state = ConversationState.COLLECT_PROGRAM.value
+        programs = self._list_programs(application.university_id)
+
+        if not programs:
+            # Pas de programmes configurés → texte libre (backward compat)
+            application.conversation_state = ConversationState.COLLECT_PROGRAM.value
+            self.db.add(application)
+            self.db.commit()
+            self.send_message(
+                application.student_phone,
+                f"Enchanté {application.student_name} ! 🎓\n\n"
+                "Quel *programme* souhaitez-vous intégrer ?\n"
+                "Ex : Licence Informatique, Master Gestion, etc.",
+            )
+            return {"state": application.conversation_state, "action": "asked_program"}
+
+        if len(programs) == 1:
+            # Auto-sélection du seul programme disponible
+            application.program = programs[0].name
+            application.conversation_state = ConversationState.COLLECT_DOCS.value
+            self.db.add(application)
+            self.db.commit()
+            first_label = DOCUMENT_LABELS[REQUIRED_DOCUMENT_TYPES_ORDERED[0]]
+            self.send_message(
+                application.student_phone,
+                f"Enchanté {application.student_name} ! 🎓\n\n"
+                f"Programme sélectionné : *{programs[0].name}*\n\n"
+                f"Commençons par {first_label}.\n\n"
+                "📎 Envoyez-le en photo ou PDF.",
+            )
+            return {"state": application.conversation_state, "action": "asked_documents"}
+
+        # Plusieurs programmes — liste numérotée
+        application.conversation_state = ConversationState.CHOOSE_PROGRAM.value
         self.db.add(application)
         self.db.commit()
+        lines = [f"Enchanté {application.student_name} ! 🎓\n\nQuel programme souhaitez-vous intégrer ?\n"]
+        for i, p in enumerate(programs, start=1):
+            lines.append(f"{i}. {p.name}")
+        lines.append("\nRépondez avec le *numéro* de votre choix.")
+        self.send_message(application.student_phone, "\n".join(lines))
+        return {"state": application.conversation_state, "action": "listed_programs"}
 
+    def _handle_choose_program(self, application: Application, text: str) -> dict:
+        programs = self._list_programs(application.university_id)
+        idx = self._parse_numeric_choice(text, len(programs))
+
+        if idx is None:
+            lines = [f"Merci de répondre avec un numéro entre 1 et {len(programs)}.\n"]
+            for i, p in enumerate(programs, start=1):
+                lines.append(f"{i}. {p.name}")
+            self.send_message(application.student_phone, "\n".join(lines))
+            return {"state": application.conversation_state, "action": "invalid_program_choice"}
+
+        chosen = programs[idx]
+        application.program = chosen.name
+        application.conversation_state = ConversationState.COLLECT_DOCS.value
+        self.db.add(application)
+        self.db.commit()
+        first_label = DOCUMENT_LABELS[REQUIRED_DOCUMENT_TYPES_ORDERED[0]]
         self.send_message(
             application.student_phone,
-            f"Enchanté {application.student_name} ! 🎓\n\n"
-            "Quel *programme* souhaitez-vous intégrer ?\n"
-            "Ex : Licence Informatique, Master Gestion, etc.",
+            f"✅ Programme *{chosen.name}* sélectionné !\n\n"
+            f"Envoyez vos documents un par un. Commençons par {first_label}.\n\n"
+            "📎 En photo ou PDF directement dans cette conversation.",
         )
-        return {"state": application.conversation_state, "action": "asked_program"}
+        return {"state": application.conversation_state, "action": "asked_documents"}
 
     def _handle_collect_program(self, application: Application, text: str) -> dict:
         if len(text) < 3:
@@ -180,17 +405,14 @@ class WhatsAppBot:
         self.db.add(application)
         self.db.commit()
 
+        first_doc = REQUIRED_DOCUMENT_TYPES_ORDERED[0]
+        first_label = DOCUMENT_LABELS[first_doc]
         self.send_message(
             application.student_phone,
-            "Parfait ! 📄\n\n"
-            "Veuillez maintenant m'envoyer les documents suivants, "
-            "un par un (PDF ou photo) :\n\n"
-            "1️⃣ Votre *diplôme* (ou attestation du bac)\n"
-            "2️⃣ Votre *relevé de notes*\n"
-            "3️⃣ Votre *carte d'identité* (ou passeport)\n"
-            "4️⃣ Une *photo d'identité* récente\n\n"
-            "Astuce : précisez en légende le type de document "
-            "(ex: « diplome », « releve », « carte », « photo »).",
+            f"Parfait ! Je vais maintenant vous demander vos documents *un par un*. 📄\n\n"
+            f"Commençons par {first_label}.\n\n"
+            "📎 Envoyez-le en photo ou PDF directement dans cette conversation.\n"
+            "Tapez *statut* à tout moment pour voir où vous en êtes.",
         )
         return {"state": application.conversation_state, "action": "asked_documents"}
 
@@ -199,18 +421,22 @@ class WhatsAppBot:
         if re.search(r"\b(statut|status|où en|ou en|liste)\b", text.lower()):
             return self._send_status(application)
 
-        # Sinon, on lui rappelle d'envoyer ses documents en pièce jointe
-        self.send_message(
-            application.student_phone,
-            "📎 Pour avancer, envoyez vos documents directement en pièce jointe "
-            "(photo ou PDF).\n\n"
-            "Pensez à préciser en légende le type de document :\n"
-            "• « diplome » pour votre diplôme\n"
-            "• « releve » pour le relevé de notes\n"
-            "• « carte » pour la carte d'identité\n"
-            "• « photo » pour la photo d'identité\n\n"
-            "Tapez *statut* à tout moment pour voir où vous en êtes. 😊",
-        )
+        # On rappelle le prochain document spécifique attendu
+        required = self._get_required_doc_types(application)
+        next_doc = get_next_required_document(application, required_types=required)
+        if next_doc:
+            label = DOCUMENT_LABELS[next_doc]
+            self.send_message(
+                application.student_phone,
+                f"📎 J'attends {label}.\n\n"
+                "Envoyez-le en photo ou PDF directement dans cette conversation.\n"
+                "Tapez *statut* pour voir où vous en êtes.",
+            )
+        else:
+            self.send_message(
+                application.student_phone,
+                "✅ Tous vos documents ont été reçus ! Validation finale en cours... 🙏",
+            )
         return {"state": application.conversation_state, "action": "reminded_docs"}
 
     def _handle_waiting(self, application: Application, text: str) -> dict:
@@ -307,13 +533,7 @@ class WhatsAppBot:
 
     def send_document_request(self, to_number: str, doc_type: DocumentType) -> None:
         """Demande un document précis à l'étudiant."""
-        labels = {
-            DocumentType.DIPLOME: "votre *diplôme* (ou attestation du baccalauréat)",
-            DocumentType.RELEVE_NOTES: "votre *relevé de notes*",
-            DocumentType.CARTE_IDENTITE: "votre *carte d'identité* (ou passeport)",
-            DocumentType.PHOTO: "une *photo d'identité* récente",
-        }
-        label = labels.get(doc_type, "un document complémentaire")
+        label = DOCUMENT_LABELS.get(doc_type, "un document complémentaire")
         self.send_message(
             to_number,
             f"Pour compléter votre dossier, merci d'envoyer {label}.\n"
@@ -340,6 +560,83 @@ class WhatsAppBot:
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+    def _get_required_doc_types(self, application: Application) -> list[DocumentType]:
+        """Charge la liste ordonnée des documents requis pour cette candidature.
+
+        Délègue au validator dynamique (RequiredDocument en base) avec fallback hardcodé.
+        """
+        from app.services.validator import ApplicationValidator
+        return ApplicationValidator(self.db).get_required_doc_types(application)
+
+    def _list_domains(self) -> list[str]:
+        """Retourne les domaines académiques distincts configurés sur les programmes actifs."""
+        rows = list(
+            self.db.execute(
+                select(Program.domain)
+                .where(Program.is_active.is_(True), Program.domain.isnot(None))
+                .distinct()
+                .order_by(Program.domain)
+            ).scalars().all()
+        )
+        return [r for r in rows if r]
+
+    def _find_universities_for_domain(self, domain: str) -> list[University]:
+        """Retourne les universités actives proposant au moins un programme dans ce domaine."""
+        matching_ids = list(
+            self.db.execute(
+                select(Program.university_id)
+                .where(Program.is_active.is_(True), Program.domain == domain)
+                .distinct()
+            ).scalars().all()
+        )
+        if not matching_ids:
+            return []
+        return list(
+            self.db.execute(
+                select(University)
+                .where(
+                    University.id.in_(matching_ids),
+                    University.is_active.is_(True),
+                )
+                .order_by(University.name)
+            ).scalars().all()
+        )
+
+    def _find_universities_by_interest(self, interest: str) -> list[University]:
+        """Alias conservé pour compatibilité — délègue à _find_universities_for_domain."""
+        return self._find_universities_for_domain(interest)
+
+    def _list_universities(self) -> list[University]:
+        """Retourne les universités actives triées par nom."""
+        return list(
+            self.db.execute(
+                select(University).where(University.is_active.is_(True)).order_by(University.name)
+            ).scalars().all()
+        )
+
+    def _list_programs(self, university_id) -> list[Program]:
+        """Retourne les programmes actifs d'une université, triés par nom."""
+        if university_id is None:
+            return []
+        return list(
+            self.db.execute(
+                select(Program)
+                .where(Program.university_id == university_id, Program.is_active.is_(True))
+                .order_by(Program.name)
+            ).scalars().all()
+        )
+
+    @staticmethod
+    def _parse_numeric_choice(text: str, count: int) -> int | None:
+        """Valide une réponse numérique et retourne l'index 0-based, ou None."""
+        try:
+            n = int(text.strip())
+            if 1 <= n <= count:
+                return n - 1
+        except ValueError:
+            pass
+        return None
+
     def _get_or_create_application(
         self, from_number: str, university: University | None
     ) -> Application:
@@ -391,10 +688,9 @@ class WhatsAppBot:
 
     def _send_status(self, application: Application) -> dict:
         """Envoie un récapitulatif des documents reçus / manquants."""
-        from app.services.validator import REQUIRED_DOCUMENT_TYPES
-
+        required = self._get_required_doc_types(application)
         provided = {d.document_type for d in application.documents if d.is_valid}
-        missing = REQUIRED_DOCUMENT_TYPES - provided
+        missing = set(required) - provided
 
         if not missing:
             self.send_message(
@@ -403,9 +699,9 @@ class WhatsAppBot:
             )
         else:
             lines = ["📋 *État de votre dossier* :", ""]
-            for d in REQUIRED_DOCUMENT_TYPES:
-                check = "✅" if d in provided else "⏳"
-                lines.append(f"{check} {d.value}")
+            for doc_type in required:
+                check = "✅" if doc_type in provided else "⏳"
+                lines.append(f"{check} {doc_type.value}")
             lines.append("")
             lines.append("Envoyez les documents manquants pour finaliser votre candidature.")
             self.send_message(application.student_phone, "\n".join(lines))
