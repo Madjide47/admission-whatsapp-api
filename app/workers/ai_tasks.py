@@ -4,9 +4,12 @@ import uuid
 
 from celery import shared_task
 
+from sqlalchemy import select
+
 from app.database import get_db_session
 from app.models.application import Application, ApplicationStatus
 from app.models.document import Document, DocumentType
+from app.models.program import Program
 from app.services.ai_classifier import get_ai_classifier
 from app.services.validator import ApplicationValidator
 from app.services.whatsapp_bot import DOCUMENT_LABELS, get_next_required_document, send_whatsapp
@@ -110,6 +113,32 @@ def check_application_completion_task(application_id: str) -> str:
         application = validator.apply_validation(application)
 
         if application.status == ApplicationStatus.VALIDATED:
+            # Vérifier si la période d'inscription du programme est ouverte
+            program = db.execute(
+                select(Program).where(
+                    Program.university_id == application.university_id,
+                    Program.name == application.program,
+                    Program.is_active.is_(True),
+                )
+            ).scalar_one_or_none()
+
+            if program and not program.is_enrollment_open():
+                # Inscriptions fermées → mise en attente, pas d'envoi immédiat
+                application.status = ApplicationStatus.PENDING_ENROLLMENT
+                db.add(application)
+                db.commit()
+                try:
+                    send_whatsapp(
+                        application.student_phone,
+                        "✅ Vos documents ont tous été validés, votre dossier est complet !\n\n"
+                        "🗓️ Les inscriptions ne sont pas encore ouvertes. Votre candidature sera "
+                        "automatiquement envoyée à l'université dès l'ouverture. "
+                        "Nous vous tiendrons informé(e). 🙏",
+                    )
+                except Exception:
+                    logger.warning("Impossible d'envoyer la notification PENDING_ENROLLMENT", exc_info=True)
+                return application.status.value
+
             try:
                 send_whatsapp(
                     application.student_phone,

@@ -31,6 +31,7 @@ class ConversationState(str, Enum):
     COLLECT_NAME = "COLLECT_NAME"
     CHOOSE_PROGRAM = "CHOOSE_PROGRAM"         # v2 : sélection programme depuis une liste
     COLLECT_PROGRAM = "COLLECT_PROGRAM"       # fallback texte libre (pas de programmes configurés)
+    AWAITING_ENROLLMENT_CHOICE = "AWAITING_ENROLLMENT_CHOICE"  # v2 : inscriptions fermées, choix étudiant
     COLLECT_DOCS = "COLLECT_DOCS"
     WAITING_VALIDATION = "WAITING_VALIDATION"
     DONE = "DONE"
@@ -143,6 +144,16 @@ class WhatsAppBot:
 
         state = ConversationState(application.conversation_state or ConversationState.WELCOME.value)
 
+        # Candidature en attente d'ouverture des inscriptions → rien à faire pour l'étudiant
+        if application.status == ApplicationStatus.PENDING_ENROLLMENT:
+            self.send_message(
+                application.student_phone,
+                "⏳ Votre dossier est complet et validé.\n\n"
+                "Nous attendons l'ouverture des inscriptions pour l'envoyer à l'université. "
+                "Vous serez notifié(e) dès qu'il sera transmis. 🙏",
+            )
+            return {"state": state.value, "action": "pending_enrollment_notice"}
+
         # Commandes globales — interceptées avant le handler d'état
         lower = normalized.lower()
         _SKIP_GLOBAL = {ConversationState.WELCOME, ConversationState.DONE}
@@ -159,6 +170,7 @@ class WhatsAppBot:
             ConversationState.COLLECT_NAME: self._handle_collect_name,
             ConversationState.CHOOSE_PROGRAM: self._handle_choose_program,
             ConversationState.COLLECT_PROGRAM: self._handle_collect_program,
+            ConversationState.AWAITING_ENROLLMENT_CHOICE: self._handle_awaiting_enrollment_choice,
             ConversationState.COLLECT_DOCS: self._handle_collect_docs,
             ConversationState.WAITING_VALIDATION: self._handle_waiting,
             ConversationState.DONE: self._handle_done,
@@ -467,6 +479,12 @@ class WhatsAppBot:
 
         chosen = programs[idx]
         application.program = chosen.name
+        application.program_id = chosen.id
+
+        # Vérifier si les inscriptions sont ouvertes pour ce programme
+        if not chosen.is_enrollment_open():
+            return self._propose_enrollment_choice(application, chosen)
+
         application.conversation_state = ConversationState.COLLECT_DOCS.value
         self.db.add(application)
         self.db.commit()
@@ -478,6 +496,76 @@ class WhatsAppBot:
             "📎 En photo ou PDF directement dans cette conversation.",
         )
         return {"state": application.conversation_state, "action": "asked_documents"}
+
+    def _propose_enrollment_choice(self, application: Application, program: "Program") -> dict:
+        """Inscriptions fermées pour ce programme — présente 2 options à l'étudiant."""
+        application.conversation_state = ConversationState.AWAITING_ENROLLMENT_CHOICE.value
+        self.db.add(application)
+        self.db.commit()
+
+        date_info = ""
+        if program.enrollment_start:
+            date_info += f"\n\n📅 Ouverture : *{program.enrollment_start.strftime('%d/%m/%Y')}*"
+        if program.enrollment_end:
+            date_info += f"\n📅 Fermeture : *{program.enrollment_end.strftime('%d/%m/%Y')}*"
+
+        self.send_message(
+            application.student_phone,
+            f"⚠️ Les inscriptions pour *{program.name}* ne sont pas encore ouvertes.{date_info}\n\n"
+            "Que souhaitez-vous faire ?\n\n"
+            "1️⃣ Je reviendrai pendant la période d'inscription\n"
+            "2️⃣ Je dépose ma candidature maintenant (elle sera envoyée à l'université dès l'ouverture)",
+        )
+        return {"state": application.conversation_state, "action": "enrollment_closed"}
+
+    def _handle_awaiting_enrollment_choice(self, application: Application, text: str) -> dict:
+        idx = self._parse_numeric_choice(text, 2)
+
+        if idx is None:
+            self.send_message(
+                application.student_phone,
+                self._choice_error(text, 2) + "\n\n"
+                "1️⃣ Je reviendrai pendant la période d'inscription\n"
+                "2️⃣ Je dépose ma candidature maintenant",
+            )
+            return {"state": application.conversation_state, "action": "invalid_enrollment_choice"}
+
+        if idx == 0:
+            # Option 1 : revenir plus tard → on supprime la candidature
+            phone = application.student_phone
+            program = self._find_program(application.university_id, application.program)
+            self.db.delete(application)
+            self.db.commit()
+
+            date_reminder = ""
+            if program and program.enrollment_start:
+                date_reminder = (
+                    f"\n\n📅 Les inscriptions ouvrent le "
+                    f"*{program.enrollment_start.strftime('%d/%m/%Y')}*."
+                )
+            self.send_message(
+                phone,
+                f"D'accord ! Revenez pendant la période d'inscription pour postuler. 😊{date_reminder}\n\n"
+                "Envoyez *Bonjour* quand vous êtes prêt(e).",
+            )
+            return {"state": ConversationState.WELCOME.value, "action": "enrollment_deferred"}
+
+        # Option 2 : dépôt immédiat — collecte des documents, envoi différé
+        application.conversation_state = ConversationState.COLLECT_DOCS.value
+        self.db.add(application)
+        self.db.commit()
+
+        required = self._get_required_doc_types(application)
+        first_doc = required[0] if required else REQUIRED_DOCUMENT_TYPES_ORDERED[0]
+        first_label = DOCUMENT_LABELS.get(first_doc, "un premier document")
+
+        self.send_message(
+            application.student_phone,
+            "✅ Votre candidature sera transmise à l'université dès l'ouverture des inscriptions.\n\n"
+            f"Constituons votre dossier dès maintenant. Commençons par {first_label}.\n\n"
+            "📎 Envoyez-le en photo ou PDF directement dans cette conversation.",
+        )
+        return {"state": application.conversation_state, "action": "enrollment_pending_accepted"}
 
     def _handle_collect_program(self, application: Application, text: str) -> dict:
         error = self._validate_program_text(text)
@@ -708,6 +796,18 @@ class WhatsAppBot:
             ).scalars().all()
         )
 
+    def _find_program(self, university_id, program_name: str | None) -> Program | None:
+        """Retrouve un programme actif par (université, nom) — cohérent avec le validator."""
+        if university_id is None or not program_name:
+            return None
+        return self.db.execute(
+            select(Program).where(
+                Program.university_id == university_id,
+                Program.name == program_name,
+                Program.is_active.is_(True),
+            )
+        ).scalar_one_or_none()
+
     @staticmethod
     def _parse_numeric_choice(text: str, count: int) -> int | None:
         """Valide une réponse numérique et retourne l'index 0-based, ou None."""
@@ -737,6 +837,7 @@ class WhatsAppBot:
                         ApplicationStatus.COLLECTING_DOCUMENTS,
                         ApplicationStatus.VALIDATING,
                         ApplicationStatus.VALIDATED,
+                        ApplicationStatus.PENDING_ENROLLMENT,
                         ApplicationStatus.SENT_TO_UNIVERSITY,
                     ]
                 )

@@ -5,9 +5,9 @@ Hiérarchie :
 """
 import enum
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -48,6 +48,18 @@ class Program(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
+    # Période d'inscription — null = aucune restriction sur cette borne
+    enrollment_start: Mapped[date | None] = mapped_column(
+        Date,
+        nullable=True,
+        comment="Date d'ouverture des inscriptions (null = toujours ouvert)",
+    )
+    enrollment_end: Mapped[date | None] = mapped_column(
+        Date,
+        nullable=True,
+        comment="Date de fermeture des inscriptions (null = pas de limite)",
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -66,6 +78,15 @@ class Program(Base):
     applications: Mapped[list["Application"]] = relationship(  # type: ignore[name-defined]
         back_populates="program_obj",
     )
+
+    def is_enrollment_open(self, reference_date: date | None = None) -> bool:
+        """Retourne True si les inscriptions sont ouvertes à la date donnée (ou aujourd'hui)."""
+        today = reference_date or date.today()
+        if self.enrollment_start and today < self.enrollment_start:
+            return False
+        if self.enrollment_end and today > self.enrollment_end:
+            return False
+        return True
 
     def __repr__(self) -> str:
         return f"<Program id={self.id} name={self.name!r}>"

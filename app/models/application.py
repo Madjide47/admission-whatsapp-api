@@ -19,6 +19,7 @@ class ApplicationStatus(str, enum.Enum):
     COLLECTING_DOCUMENTS = "COLLECTING_DOCUMENTS"     # Upload des documents requis
     VALIDATING = "VALIDATING"                         # Validation OCR + IA en cours
     VALIDATED = "VALIDATED"                           # Dossier complet et validé
+    PENDING_ENROLLMENT = "PENDING_ENROLLMENT"         # Validé, en attente d'ouverture des inscriptions
     SENT_TO_UNIVERSITY = "SENT_TO_UNIVERSITY"         # Webhook envoyé à l'université
     ACCEPTED = "ACCEPTED"                             # Décision favorable
     REJECTED = "REJECTED"                             # Décision défavorable
