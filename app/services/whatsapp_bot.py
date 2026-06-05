@@ -141,8 +141,17 @@ class WhatsAppBot:
         if media_url:
             return self._handle_media(application, media_url, media_content_type, normalized)
 
-        # Sinon, on suit la machine à états
         state = ConversationState(application.conversation_state or ConversationState.WELCOME.value)
+
+        # Commandes globales — interceptées avant le handler d'état
+        lower = normalized.lower()
+        _SKIP_GLOBAL = {ConversationState.WELCOME, ConversationState.DONE}
+        if state not in _SKIP_GLOBAL:
+            if re.search(r"\b(statut|status|où en|ou en)\b", lower):
+                return self._send_status(application)
+            if re.search(r"\b(aide|help|sos|perdu|quoi faire|que faire)\b", lower):
+                return self._send_contextual_help(application, state)
+
         handler = {
             ConversationState.WELCOME: self._handle_welcome,
             ConversationState.COLLECT_INTEREST: self._handle_collect_interest,
@@ -155,6 +164,86 @@ class WhatsAppBot:
             ConversationState.DONE: self._handle_done,
         }[state]
         return handler(application, normalized)
+
+    # ------------------------------------------------------------------
+    # Validateurs de champs
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _validate_name(text: str) -> str | None:
+        """Retourne un message d'erreur ou None si le nom est valide."""
+        stripped = text.strip()
+        if len(stripped) < 2:
+            return "Votre nom doit contenir au moins 2 caractères."
+        if len(stripped) > 100:
+            return "Votre nom est trop long (100 caractères maximum)."
+        if not any(c.isalpha() for c in stripped):
+            return "Votre nom doit contenir des lettres."
+        if any(c.isdigit() for c in stripped):
+            return (
+                "Votre nom ne doit pas contenir de chiffres.\n"
+                "Envoyez votre *nom et prénom complets* (ex : Kofi Mensah)."
+            )
+        return None
+
+    @staticmethod
+    def _validate_program_text(text: str) -> str | None:
+        """Retourne un message d'erreur ou None si le programme est valide."""
+        stripped = text.strip()
+        if len(stripped) < 3:
+            return "Merci de préciser le programme visé (au moins 3 caractères)."
+        if len(stripped) > 150:
+            return "Le nom du programme est trop long (150 caractères maximum)."
+        if not any(c.isalpha() for c in stripped):
+            return "Le nom du programme doit contenir des lettres."
+        return None
+
+    @staticmethod
+    def _choice_error(text: str, count: int) -> str:
+        """Message d'erreur adapté : numéro hors plage vs texte non numérique."""
+        stripped = text.strip()
+        if stripped.isdigit():
+            return (
+                f"Le numéro *{int(stripped)}* ne correspond à aucune option. "
+                f"Choisissez entre *1* et *{count}*."
+            )
+        return (
+            f"Je n'ai pas compris *« {stripped[:30]} »*. "
+            f"Répondez avec un *numéro* entre *1* et *{count}*."
+        )
+
+    def _send_contextual_help(self, application: Application, state: ConversationState) -> dict:
+        """Envoie un message d'aide adapté à l'état actuel de la conversation."""
+        help_map = {
+            ConversationState.COLLECT_INTEREST: (
+                "Répondez avec le *numéro* du domaine qui vous intéresse."
+            ),
+            ConversationState.CHOOSE_UNIVERSITY: (
+                "Répondez avec le *numéro* de l'université de votre choix."
+            ),
+            ConversationState.COLLECT_NAME: (
+                "Envoyez votre *nom et prénom complets*, en lettres uniquement.\n"
+                "Exemple : *Kofi Mensah*"
+            ),
+            ConversationState.CHOOSE_PROGRAM: (
+                "Répondez avec le *numéro* du programme que vous souhaitez intégrer."
+            ),
+            ConversationState.COLLECT_PROGRAM: (
+                "Tapez le nom du programme visé.\n"
+                "Exemple : *Licence Informatique*, *Master Droit des Affaires*"
+            ),
+            ConversationState.COLLECT_DOCS: (
+                "Envoyez vos documents *en photo ou PDF* directement ici.\n"
+                "Tapez *statut* pour voir les documents déjà reçus et ceux qui manquent."
+            ),
+            ConversationState.WAITING_VALIDATION: (
+                "Votre dossier est en cours de vérification. "
+                "Vous serez notifié dès qu'une décision sera prise. 🙏"
+            ),
+        }
+        msg = help_map.get(state, "Envoyez *Bonjour* pour démarrer une candidature.")
+        self.send_message(application.student_phone, f"ℹ️ *Aide* :\n\n{msg}")
+        return {"state": application.conversation_state, "action": "help_sent"}
 
     # ------------------------------------------------------------------
     # Handlers par état
@@ -241,7 +330,7 @@ class WhatsAppBot:
         idx = self._parse_numeric_choice(text, len(domains))
 
         if idx is None:
-            lines = [f"Merci de répondre avec un numéro entre 1 et {len(domains)}.\n"]
+            lines = [self._choice_error(text, len(domains)), ""]
             for i, d in enumerate(domains, start=1):
                 lines.append(f"{i}. {d}")
             self.send_message(application.student_phone, "\n".join(lines))
@@ -298,7 +387,7 @@ class WhatsAppBot:
         idx = self._parse_numeric_choice(text, len(universities))
 
         if idx is None:
-            lines = [f"Merci de répondre avec un numéro entre 1 et {len(universities)}.\n"]
+            lines = [self._choice_error(text, len(universities)), ""]
             for i, u in enumerate(universities, start=1):
                 lines.append(f"{i}. {u.name}")
             self.send_message(application.student_phone, "\n".join(lines))
@@ -317,14 +406,12 @@ class WhatsAppBot:
         return {"state": application.conversation_state, "action": "asked_name"}
 
     def _handle_collect_name(self, application: Application, text: str) -> dict:
-        if len(text) < 2:
-            self.send_message(
-                application.student_phone,
-                "Merci d'envoyer votre nom complet (au moins 2 caractères).",
-            )
-            return {"state": application.conversation_state, "action": "name_too_short"}
+        error = self._validate_name(text)
+        if error:
+            self.send_message(application.student_phone, f"❌ {error}")
+            return {"state": application.conversation_state, "action": "name_invalid"}
 
-        application.student_name = text[:255]
+        application.student_name = text.strip()[:100]
         programs = self._list_programs(application.university_id)
 
         if not programs:
@@ -372,7 +459,7 @@ class WhatsAppBot:
         idx = self._parse_numeric_choice(text, len(programs))
 
         if idx is None:
-            lines = [f"Merci de répondre avec un numéro entre 1 et {len(programs)}.\n"]
+            lines = [self._choice_error(text, len(programs)), ""]
             for i, p in enumerate(programs, start=1):
                 lines.append(f"{i}. {p.name}")
             self.send_message(application.student_phone, "\n".join(lines))
@@ -393,14 +480,12 @@ class WhatsAppBot:
         return {"state": application.conversation_state, "action": "asked_documents"}
 
     def _handle_collect_program(self, application: Application, text: str) -> dict:
-        if len(text) < 3:
-            self.send_message(
-                application.student_phone,
-                "Merci de préciser le programme visé (au moins 3 caractères).",
-            )
-            return {"state": application.conversation_state, "action": "program_too_short"}
+        error = self._validate_program_text(text)
+        if error:
+            self.send_message(application.student_phone, f"❌ {error}")
+            return {"state": application.conversation_state, "action": "program_invalid"}
 
-        application.program = text[:255]
+        application.program = text.strip()[:150]
         application.conversation_state = ConversationState.COLLECT_DOCS.value
         self.db.add(application)
         self.db.commit()
@@ -417,11 +502,8 @@ class WhatsAppBot:
         return {"state": application.conversation_state, "action": "asked_documents"}
 
     def _handle_collect_docs(self, application: Application, text: str) -> dict:
-        # Si l'étudiant demande où il en est
-        if re.search(r"\b(statut|status|où en|ou en|liste)\b", text.lower()):
-            return self._send_status(application)
-
         # On rappelle le prochain document spécifique attendu
+        # (statut est géré globalement dans handle_incoming_message)
         required = self._get_required_doc_types(application)
         next_doc = get_next_required_document(application, required_types=required)
         if next_doc:
