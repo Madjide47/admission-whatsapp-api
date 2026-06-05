@@ -9,8 +9,17 @@ import pytest
 
 from app.models.application import Application, ApplicationStatus
 from app.models.document import Document, DocumentType
+from app.models.program import Program
 from app.models.university import University
-from app.services.whatsapp_bot import ConversationState, WhatsAppBot
+from app.services.whatsapp_bot import (
+    ConversationState,
+    REQUIRED_DOCUMENT_TYPES_ORDERED,
+    WhatsAppBot,
+    get_next_required_document,
+    send_whatsapp,
+)
+import app.workers.ocr_tasks  # Fix mock.patch import
+
 
 
 # ---------------------------------------------------------------------------
@@ -258,3 +267,308 @@ def test_twilio_endpoint_with_media(client, monkeypatch):
         },
     )
     assert captured.get("media_url") == "https://twilio.com/media/abc123"
+
+
+# ---------------------------------------------------------------------------
+# Validation séquentielle et helpers v2
+# ---------------------------------------------------------------------------
+
+
+def test_get_next_required_document_no_docs(application):
+    """Sans aucun document, le premier requis est DIPLOME."""
+    assert get_next_required_document(application) == DocumentType.DIPLOME
+
+
+def test_get_next_required_document_partial(application, db_session):
+    """Après DIPLOME valide, le suivant est RELEVE_NOTES."""
+    doc = Document(
+        id=uuid.uuid4(),
+        application_id=application.id,
+        document_type=DocumentType.DIPLOME,
+        gcs_path="gs://bucket/diplome",
+        is_valid=True,
+    )
+    db_session.add(doc)
+    db_session.commit()
+    db_session.refresh(application)
+
+    assert get_next_required_document(application) == DocumentType.RELEVE_NOTES
+
+
+def test_get_next_required_document_all_valid(application, db_session):
+    """Tous les documents valides → retourne None."""
+    for doc_type in REQUIRED_DOCUMENT_TYPES_ORDERED:
+        db_session.add(Document(
+            id=uuid.uuid4(),
+            application_id=application.id,
+            document_type=doc_type,
+            gcs_path=f"gs://bucket/{doc_type.value}",
+            is_valid=True,
+        ))
+    db_session.commit()
+    db_session.refresh(application)
+
+    assert get_next_required_document(application) is None
+
+
+def test_get_next_required_document_invalid_not_counted(application, db_session):
+    """Un document présent mais invalide ne compte pas."""
+    doc = Document(
+        id=uuid.uuid4(),
+        application_id=application.id,
+        document_type=DocumentType.DIPLOME,
+        gcs_path="gs://bucket/diplome",
+        is_valid=False,
+    )
+    db_session.add(doc)
+    db_session.commit()
+    db_session.refresh(application)
+
+    assert get_next_required_document(application) == DocumentType.DIPLOME
+
+
+def test_collect_program_asks_first_document(bot, application, db_session):
+    """Après saisie du programme, le bot demande le premier document (DIPLOME)."""
+    application.conversation_state = ConversationState.COLLECT_PROGRAM.value
+    db_session.add(application)
+    db_session.commit()
+
+    bot._handle_collect_program(application, "Licence Informatique")
+    sent_body = bot._mock_twilio.messages.create.call_args.kwargs["body"]
+    assert "diplôme" in sent_body.lower()
+
+
+def test_collect_docs_mentions_specific_next_document(bot, application, db_session):
+    """_handle_collect_docs rappelle le prochain document attendu."""
+    application.conversation_state = ConversationState.COLLECT_DOCS.value
+    db_session.add(application)
+    db_session.commit()
+
+    bot._handle_collect_docs(application, "je ne sais pas quoi envoyer")
+    sent_body = bot._mock_twilio.messages.create.call_args.kwargs["body"]
+    # Sans aucun doc, le prochain est DIPLOME
+    assert "diplôme" in sent_body.lower()
+
+
+def test_collect_docs_after_diplome_valid_asks_releve(bot, application, db_session):
+    """Après un DIPLOME valide, _handle_collect_docs demande le relevé."""
+    db_session.add(Document(
+        id=uuid.uuid4(),
+        application_id=application.id,
+        document_type=DocumentType.DIPLOME,
+        gcs_path="gs://bucket/diplome",
+        is_valid=True,
+    ))
+    db_session.commit()
+    db_session.refresh(application)
+    application.conversation_state = ConversationState.COLLECT_DOCS.value
+
+    bot._handle_collect_docs(application, "et maintenant ?")
+    sent_body = bot._mock_twilio.messages.create.call_args.kwargs["body"]
+    assert "relevé" in sent_body.lower()
+
+
+def test_send_whatsapp_demo_mode(monkeypatch):
+    """send_whatsapp en DEMO_MODE ne lève pas d'erreur et retourne DEMO_SID."""
+    monkeypatch.setattr("app.services.whatsapp_bot.settings.DEMO_MODE", True)
+    result = send_whatsapp("+22890000001", "Test message")
+    assert result == "DEMO_SID"
+
+
+# ---------------------------------------------------------------------------
+# Flow université → programme (v2)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+def second_university(db_session) -> University:
+    univ = University(
+        id=uuid.uuid4(),
+        name="Université Deuxième",
+        email=f"second-{uuid.uuid4().hex[:6]}@univ.test",
+        api_key_hash="hash2",
+        api_secret_hash="hash2",
+        api_key_prefix="univ_second",
+        webhook_url="https://example2.test/hook",
+        webhook_secret="secret2",
+        is_active=True,
+    )
+    db_session.add(univ)
+    db_session.commit()
+    db_session.refresh(univ)
+    return univ
+
+
+@pytest.fixture()
+def program(db_session, university) -> Program:
+    p = Program(
+        id=uuid.uuid4(),
+        university_id=university.id,
+        name="Licence Informatique",
+        is_active=True,
+    )
+    db_session.add(p)
+    db_session.commit()
+    db_session.refresh(p)
+    return p
+
+
+@pytest.fixture()
+def second_program(db_session, university) -> Program:
+    p = Program(
+        id=uuid.uuid4(),
+        university_id=university.id,
+        name="Master Finance",
+        is_active=True,
+    )
+    db_session.add(p)
+    db_session.commit()
+    db_session.refresh(p)
+    return p
+
+
+def test_welcome_single_university_auto_selects(bot, application, university, db_session):
+    """Une seule université active → sélection auto, demande le nom directement."""
+    result = bot._handle_welcome(application, "Bonjour")
+    db_session.refresh(application)
+    assert application.conversation_state == ConversationState.COLLECT_NAME.value
+    assert application.university_id == university.id
+    assert result["action"] == "asked_name"
+
+
+def test_welcome_multiple_universities_shows_list(bot, application, university, second_university, db_session):
+    """Plusieurs universités → liste numérotée, transition vers CHOOSE_UNIVERSITY."""
+    result = bot._handle_welcome(application, "Bonjour")
+    db_session.refresh(application)
+    assert application.conversation_state == ConversationState.CHOOSE_UNIVERSITY.value
+    assert result["action"] == "listed_universities"
+    sent_body = bot._mock_twilio.messages.create.call_args.kwargs["body"]
+    assert "1." in sent_body
+    assert "2." in sent_body
+
+
+def test_choose_university_valid_choice(bot, application, university, second_university, db_session):
+    """Choix valide → university_id mis à jour, demande le nom."""
+    application.conversation_state = ConversationState.CHOOSE_UNIVERSITY.value
+    db_session.add(application)
+    db_session.commit()
+
+    result = bot._handle_choose_university(application, "1")
+    db_session.refresh(application)
+    assert application.conversation_state == ConversationState.COLLECT_NAME.value
+    assert result["action"] == "asked_name"
+    assert application.university_id is not None
+
+
+def test_choose_university_invalid_choice_shows_list_again(bot, application, university, second_university, db_session):
+    """Choix hors plage → re-affiche la liste."""
+    application.conversation_state = ConversationState.CHOOSE_UNIVERSITY.value
+    db_session.add(application)
+    db_session.commit()
+
+    result = bot._handle_choose_university(application, "99")
+    assert application.conversation_state == ConversationState.CHOOSE_UNIVERSITY.value
+    assert result["action"] == "invalid_university_choice"
+
+
+def test_choose_university_non_numeric_shows_list_again(bot, application, university, second_university, db_session):
+    """Réponse non numérique → re-affiche la liste."""
+    application.conversation_state = ConversationState.CHOOSE_UNIVERSITY.value
+    db_session.add(application)
+    db_session.commit()
+
+    result = bot._handle_choose_university(application, "je veux la première")
+    assert result["action"] == "invalid_university_choice"
+
+
+def test_collect_name_with_programs_shows_list(bot, application, university, program, second_program, db_session):
+    """Si des programmes existent → liste numérotée, transition CHOOSE_PROGRAM."""
+    application.conversation_state = ConversationState.COLLECT_NAME.value
+    db_session.add(application)
+    db_session.commit()
+
+    result = bot._handle_collect_name(application, "Kofi Mensah")
+    db_session.refresh(application)
+    assert application.student_name == "Kofi Mensah"
+    assert application.conversation_state == ConversationState.CHOOSE_PROGRAM.value
+    assert result["action"] == "listed_programs"
+    sent_body = bot._mock_twilio.messages.create.call_args.kwargs["body"]
+    assert "1." in sent_body
+
+
+def test_collect_name_no_programs_falls_back_to_free_text(bot, application, university, db_session):
+    """Sans programmes configurés → mode texte libre (COLLECT_PROGRAM)."""
+    application.conversation_state = ConversationState.COLLECT_NAME.value
+    db_session.add(application)
+    db_session.commit()
+
+    result = bot._handle_collect_name(application, "Kofi Mensah")
+    db_session.refresh(application)
+    assert application.conversation_state == ConversationState.COLLECT_PROGRAM.value
+    assert result["action"] == "asked_program"
+
+
+def test_collect_name_single_program_auto_selects(bot, application, university, program, db_session):
+    """Un seul programme → sélection auto, directement vers COLLECT_DOCS."""
+    application.conversation_state = ConversationState.COLLECT_NAME.value
+    db_session.add(application)
+    db_session.commit()
+
+    result = bot._handle_collect_name(application, "Kofi Mensah")
+    db_session.refresh(application)
+    assert application.program == program.name
+    assert application.conversation_state == ConversationState.COLLECT_DOCS.value
+    assert result["action"] == "asked_documents"
+
+
+def test_choose_program_valid_choice(bot, application, university, program, second_program, db_session):
+    """Choix valide de programme → program sauvegardé, transition COLLECT_DOCS."""
+    application.conversation_state = ConversationState.CHOOSE_PROGRAM.value
+    db_session.add(application)
+    db_session.commit()
+
+    result = bot._handle_choose_program(application, "1")
+    db_session.refresh(application)
+    assert application.program is not None
+    assert application.conversation_state == ConversationState.COLLECT_DOCS.value
+    assert result["action"] == "asked_documents"
+
+
+def test_choose_program_invalid_choice_shows_list_again(bot, application, university, program, second_program, db_session):
+    """Choix invalide → re-affiche la liste."""
+    application.conversation_state = ConversationState.CHOOSE_PROGRAM.value
+    db_session.add(application)
+    db_session.commit()
+
+    result = bot._handle_choose_program(application, "0")
+    assert application.conversation_state == ConversationState.CHOOSE_PROGRAM.value
+    assert result["action"] == "invalid_program_choice"
+
+
+def test_parse_numeric_choice_valid():
+    assert WhatsAppBot._parse_numeric_choice("1", 3) == 0
+    assert WhatsAppBot._parse_numeric_choice("3", 3) == 2
+    assert WhatsAppBot._parse_numeric_choice("  2  ", 3) == 1
+
+
+def test_parse_numeric_choice_invalid():
+    assert WhatsAppBot._parse_numeric_choice("0", 3) is None
+    assert WhatsAppBot._parse_numeric_choice("4", 3) is None
+    assert WhatsAppBot._parse_numeric_choice("abc", 3) is None
+    assert WhatsAppBot._parse_numeric_choice("", 3) is None
+
+
+def test_send_whatsapp_twilio_error_returns_none(monkeypatch):
+    """send_whatsapp avale les erreurs Twilio et retourne None."""
+    from twilio.base.exceptions import TwilioRestException
+
+    def raise_twilio(*a, **kw):
+        raise TwilioRestException(status=400, uri="/", msg="error")
+
+    monkeypatch.setattr("app.services.whatsapp_bot.settings.DEMO_MODE", False)
+    with patch("app.services.whatsapp_bot.TwilioClient") as mock_cls:
+        mock_client = MagicMock()
+        mock_cls.return_value = mock_client
+        mock_client.messages.create.side_effect = raise_twilio
+        result = send_whatsapp("+22890000001", "Test")
+    assert result is None

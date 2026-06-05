@@ -9,8 +9,42 @@ from app.models.application import Application, ApplicationStatus
 from app.models.document import Document, DocumentType
 from app.services.ai_classifier import get_ai_classifier
 from app.services.validator import ApplicationValidator
+from app.services.whatsapp_bot import DOCUMENT_LABELS, get_next_required_document, send_whatsapp
 
 logger = logging.getLogger(__name__)
+
+
+def _send_document_feedback(
+    application: Application,
+    doc_type: DocumentType,
+    is_valid: bool,
+    errors: list[str],
+) -> None:
+    """Envoie un message WhatsApp à l'étudiant après classification d'un document."""
+    label = DOCUMENT_LABELS.get(doc_type, doc_type.value).replace("*", "")
+    label_cap = label.strip().capitalize()
+
+    if is_valid:
+        db_fresh = get_db_session()
+        try:
+            fresh_app = db_fresh.get(Application, application.id)
+            next_doc = get_next_required_document(fresh_app) if fresh_app else None
+        finally:
+            db_fresh.close()
+
+        if next_doc:
+            next_label = DOCUMENT_LABELS[next_doc]
+            msg = f"✅ {label_cap} validé !\n\nEnvoyez maintenant {next_label}."
+        else:
+            msg = f"✅ {label_cap} validé ! Tous vos documents sont reçus, validation finale en cours..."
+    else:
+        errors_str = "\n• ".join(errors) if errors else "Document illisible ou incomplet"
+        msg = (
+            f"❌ {label_cap} non valide :\n• {errors_str}\n\n"
+            "Merci de renvoyer un document plus lisible (bonne lumière, texte net)."
+        )
+
+    send_whatsapp(application.student_phone, msg)
 
 
 @shared_task(
@@ -42,6 +76,14 @@ def classify_document_task(self, document_id: str) -> str:
         db.commit()
         db.refresh(document)
 
+        # Feedback WhatsApp immédiat sur ce document
+        try:
+            application = db.get(Application, document.application_id)
+            if application:
+                _send_document_feedback(application, result.type, result.is_valid, result.errors)
+        except Exception:
+            logger.warning("Impossible d'envoyer le feedback WhatsApp post-classification", exc_info=True)
+
         # Déclenche la revalidation globale du dossier
         check_application_completion_task.delay(str(document.application_id))
         return "ok"
@@ -68,7 +110,15 @@ def check_application_completion_task(application_id: str) -> str:
         application = validator.apply_validation(application)
 
         if application.status == ApplicationStatus.VALIDATED:
-            # On enchaîne sur l'envoi du webhook
+            try:
+                send_whatsapp(
+                    application.student_phone,
+                    "🎉 Votre dossier est complet et a été transmis à l'université !\n\n"
+                    "Vous recevrez une réponse ici dès qu'une décision sera prise. 🙏",
+                )
+            except Exception:
+                logger.warning("Impossible d'envoyer la notification de validation", exc_info=True)
+
             from app.workers.webhook_tasks import dispatch_validated_application_task
 
             dispatch_validated_application_task.delay(str(application.id))

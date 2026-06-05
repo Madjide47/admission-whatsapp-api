@@ -47,11 +47,19 @@ class Settings(BaseSettings):
         description="Format requis: whatsapp:+14155238886",
     )
 
+    # ---------------- Fournisseur IA ----------------
+    # "anthropic" (Claude) ou "gemini" (Gemini Flash)
+    AI_PROVIDER: Literal["anthropic", "gemini"] = "anthropic"
+
     # ---------------- Anthropic Claude ----------------
-    ANTHROPIC_API_KEY: str
+    ANTHROPIC_API_KEY: str = ""
     ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
     ANTHROPIC_MAX_TOKENS: int = 1024
     ANTHROPIC_TIMEOUT: int = 30
+
+    # ---------------- Google Gemini Flash ----------------
+    GOOGLE_AI_API_KEY: str = ""
+    GOOGLE_AI_MODEL: str = "gemini-2.0-flash"
 
     # ---------------- Google Cloud Storage ----------------
     GCS_BUCKET_NAME: str
@@ -82,6 +90,12 @@ class Settings(BaseSettings):
     # ---------------- Mode démo ----------------
     # Active les stubs locaux : Twilio → console, GCS → filesystem, IA → mock
     DEMO_MODE: bool = False
+
+    # Stockage local même si DEMO_MODE=false (utile : Twilio réel + pas de GCS)
+    LOCAL_STORAGE: bool = False
+
+    # Mock IA même si DEMO_MODE=false (utile : pas de clé Anthropic payante)
+    AI_MOCK: bool = False
 
     # ---------------- Calculés / dérivés ----------------
     @property

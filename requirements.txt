@@ -41,6 +41,9 @@ PyPDF2==3.0.1
 # --- IA Anthropic Claude ---
 anthropic==0.28.0
 
+# --- IA Google Gemini Flash ---
+google-generativeai==0.8.3
+
 # --- WhatsApp Twilio ---
 twilio==9.1.0
 

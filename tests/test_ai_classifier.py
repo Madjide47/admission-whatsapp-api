@@ -1,11 +1,15 @@
 """Tests du service de classification IA.
 
 L'API Anthropic est toujours mockée — aucun appel réseau réel.
+AI_PROVIDER est forcé à "anthropic" pour les tests (backend contrôlé).
 """
 import json
+import os
 from unittest.mock import MagicMock, patch
 
 import pytest
+
+os.environ.setdefault("AI_PROVIDER", "anthropic")
 
 from app.models.document import DocumentType
 from app.schemas.document import DocumentClassificationResult
@@ -13,10 +17,14 @@ from app.services.ai_classifier import AIClassifier
 
 
 @pytest.fixture()
-def classifier():
+def classifier(monkeypatch):
+    """AIClassifier avec backend Anthropic mocké."""
+    monkeypatch.setattr("app.services.ai_classifier.settings.AI_PROVIDER", "anthropic")
+    monkeypatch.setattr("app.services.ai_classifier.settings.AI_MOCK", False)
+    monkeypatch.setattr("app.services.ai_classifier.settings.DEMO_MODE", False)
     with patch("app.services.ai_classifier.Anthropic"):
         c = AIClassifier()
-        c.client = MagicMock()
+        c._backend.client = MagicMock()
         return c
 
 
@@ -36,7 +44,7 @@ def _make_response(payload: dict) -> MagicMock:
 
 
 def test_classify_diplome(classifier):
-    classifier.client.messages.create.return_value = _make_response(
+    classifier._backend.client.messages.create.return_value = _make_response(
         {
             "type": "DIPLOME",
             "confidence": 0.95,
@@ -53,7 +61,7 @@ def test_classify_diplome(classifier):
 
 
 def test_classify_releve_notes(classifier):
-    classifier.client.messages.create.return_value = _make_response(
+    classifier._backend.client.messages.create.return_value = _make_response(
         {
             "type": "RELEVE_NOTES",
             "confidence": 0.88,
@@ -67,7 +75,7 @@ def test_classify_releve_notes(classifier):
 
 
 def test_classify_invalid_document_with_errors(classifier):
-    classifier.client.messages.create.return_value = _make_response(
+    classifier._backend.client.messages.create.return_value = _make_response(
         {
             "type": "DIPLOME",
             "confidence": 0.4,
@@ -89,7 +97,7 @@ def test_classify_invalid_document_with_errors(classifier):
 
 def test_classify_empty_text_no_api_call(classifier):
     result = classifier.classify("")
-    classifier.client.messages.create.assert_not_called()
+    classifier._backend.client.messages.create.assert_not_called()
     assert result.is_valid is False
     assert result.confidence == 0.0
     assert "Aucun texte" in result.errors[0]
@@ -97,7 +105,7 @@ def test_classify_empty_text_no_api_call(classifier):
 
 def test_classify_whitespace_only_no_api_call(classifier):
     result = classifier.classify("   \n\t  ")
-    classifier.client.messages.create.assert_not_called()
+    classifier._backend.client.messages.create.assert_not_called()
     assert result.is_valid is False
 
 
@@ -109,7 +117,7 @@ def test_classify_whitespace_only_no_api_call(classifier):
 def test_classify_api_down_returns_invalid(classifier):
     from anthropic import APIError
 
-    classifier.client.messages.create.side_effect = APIError(
+    classifier._backend.client.messages.create.side_effect = APIError(
         message="Service unavailable", request=MagicMock(), body={}
     )
     result = classifier.classify("Texte valide de test")
@@ -124,7 +132,7 @@ def test_classify_bad_json_returns_invalid(classifier):
     block.text = "not json at all {{"
     resp = MagicMock()
     resp.content = [block]
-    classifier.client.messages.create.return_value = resp
+    classifier._backend.client.messages.create.return_value = resp
 
     result = classifier.classify("Texte quelconque")
     assert result.is_valid is False
@@ -132,7 +140,7 @@ def test_classify_bad_json_returns_invalid(classifier):
 
 
 def test_classify_unknown_type_defaults_to_autre(classifier):
-    classifier.client.messages.create.return_value = _make_response(
+    classifier._backend.client.messages.create.return_value = _make_response(
         {
             "type": "INCONNU",
             "confidence": 0.1,
@@ -147,7 +155,7 @@ def test_classify_unknown_type_defaults_to_autre(classifier):
 
 def test_classify_with_expected_type_hint(classifier):
     """Le hint expected_type est bien envoyé dans le prompt utilisateur."""
-    classifier.client.messages.create.return_value = _make_response(
+    classifier._backend.client.messages.create.return_value = _make_response(
         {
             "type": "CARTE_IDENTITE",
             "confidence": 0.9,
@@ -157,7 +165,7 @@ def test_classify_with_expected_type_hint(classifier):
         }
     )
     result = classifier.classify("Carte Nationale d'Identité…", expected_type=DocumentType.CARTE_IDENTITE)
-    call_args = classifier.client.messages.create.call_args
+    call_args = classifier._backend.client.messages.create.call_args
     user_content = call_args.kwargs["messages"][0]["content"]
     assert "CARTE_IDENTITE" in user_content
     assert result.type == DocumentType.CARTE_IDENTITE
@@ -174,7 +182,7 @@ def test_parse_response_strips_json_fence(classifier):
     block.text = '```json\n{"type":"PHOTO","confidence":0.7,"is_valid":true,"errors":[],"extracted_fields":{}}\n```'
     resp = MagicMock()
     resp.content = [block]
-    classifier.client.messages.create.return_value = resp
+    classifier._backend.client.messages.create.return_value = resp
 
     result = classifier.classify("quelques pixels")
     assert result.type == DocumentType.PHOTO
