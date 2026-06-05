@@ -69,10 +69,19 @@ REQUIRED_DOCUMENT_TYPES_ORDERED: list[DocumentType] = [
 ]
 
 
-def get_next_required_document(application: Application) -> DocumentType | None:
-    """Retourne le prochain document requis non encore validé, dans l'ordre défini."""
+def get_next_required_document(
+    application: Application,
+    required_types: list[DocumentType] | None = None,
+) -> DocumentType | None:
+    """Retourne le prochain document requis non encore validé.
+
+    required_types : liste ordonnée à utiliser. Si None, fallback sur
+    REQUIRED_DOCUMENT_TYPES_ORDERED (hardcodé). Les workers passent None ;
+    le bot passe la liste chargée depuis required_documents via _get_required_doc_types.
+    """
+    types = required_types if required_types is not None else REQUIRED_DOCUMENT_TYPES_ORDERED
     provided_valid = {d.document_type for d in application.documents if d.is_valid}
-    for doc_type in REQUIRED_DOCUMENT_TYPES_ORDERED:
+    for doc_type in types:
         if doc_type not in provided_valid:
             return doc_type
     return None
@@ -339,7 +348,8 @@ class WhatsAppBot:
             return self._send_status(application)
 
         # On rappelle le prochain document spécifique attendu
-        next_doc = get_next_required_document(application)
+        required = self._get_required_doc_types(application)
+        next_doc = get_next_required_document(application, required_types=required)
         if next_doc:
             label = DOCUMENT_LABELS[next_doc]
             self.send_message(
@@ -476,6 +486,14 @@ class WhatsAppBot:
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+    def _get_required_doc_types(self, application: Application) -> list[DocumentType]:
+        """Charge la liste ordonnée des documents requis pour cette candidature.
+
+        Délègue au validator dynamique (RequiredDocument en base) avec fallback hardcodé.
+        """
+        from app.services.validator import ApplicationValidator
+        return ApplicationValidator(self.db).get_required_doc_types(application)
+
     def _list_universities(self) -> list[University]:
         """Retourne les universités actives triées par nom."""
         return list(
@@ -558,8 +576,9 @@ class WhatsAppBot:
 
     def _send_status(self, application: Application) -> dict:
         """Envoie un récapitulatif des documents reçus / manquants."""
+        required = self._get_required_doc_types(application)
         provided = {d.document_type for d in application.documents if d.is_valid}
-        missing = set(REQUIRED_DOCUMENT_TYPES_ORDERED) - provided
+        missing = set(required) - provided
 
         if not missing:
             self.send_message(
@@ -568,7 +587,7 @@ class WhatsAppBot:
             )
         else:
             lines = ["📋 *État de votre dossier* :", ""]
-            for doc_type in REQUIRED_DOCUMENT_TYPES_ORDERED:
+            for doc_type in required:
                 check = "✅" if doc_type in provided else "⏳"
                 lines.append(f"{check} {doc_type.value}")
             lines.append("")

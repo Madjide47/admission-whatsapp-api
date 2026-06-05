@@ -6,6 +6,8 @@ import pytest
 
 from app.models.application import Application, ApplicationStatus
 from app.models.document import Document, DocumentType
+from app.models.program import Program
+from app.models.required_document import RequiredDocument
 from app.models.university import University
 from app.services.validator import ApplicationValidator, REQUIRED_DOCUMENT_TYPES
 
@@ -187,3 +189,167 @@ def test_pipeline_no_webhook_when_incomplete(db_session, base_application, monke
         check_application_completion_task.run(str(base_application.id))
 
     mock_delay.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Validator dynamique — chargement depuis required_documents
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+def program_with_requirements(db_session, university) -> tuple[Program, list[RequiredDocument]]:
+    """Programme avec 2 documents requis seulement : DIPLOME + CARTE_IDENTITE."""
+    program = Program(
+        id=uuid.uuid4(),
+        university_id=university.id,
+        name="Licence Droit",  # même nom que base_application.program
+        is_active=True,
+    )
+    db_session.add(program)
+    db_session.flush()
+
+    req_docs = []
+    for i, (doc_type, label) in enumerate([
+        (DocumentType.DIPLOME, "Diplôme du bac"),
+        (DocumentType.CARTE_IDENTITE, "Carte d'identité"),
+    ]):
+        rd = RequiredDocument(
+            id=uuid.uuid4(),
+            program_id=program.id,
+            document_type=doc_type,
+            is_required=True,
+            label=label,
+            order=i,
+        )
+        db_session.add(rd)
+        req_docs.append(rd)
+
+    db_session.commit()
+    return program, req_docs
+
+
+def test_dynamic_validator_uses_required_documents(db_session, base_application, program_with_requirements):
+    """Quand required_documents existe, seuls ces types sont exigés (pas le set hardcodé)."""
+    _, req_docs = program_with_requirements
+    # Ajouter seulement DIPLOME et CARTE_IDENTITE (les 2 types configurés)
+    for doc_type in [DocumentType.DIPLOME, DocumentType.CARTE_IDENTITE]:
+        _add_valid_doc(db_session, base_application, doc_type)
+    db_session.refresh(base_application)
+
+    validator = ApplicationValidator(db_session)
+    is_complete, score, reasons = validator.validate(base_application)
+
+    assert is_complete is True, f"Devrait être complet. Raisons : {reasons}"
+    assert reasons == []
+
+
+def test_dynamic_validator_ignores_unconfigured_types(db_session, base_application, program_with_requirements):
+    """RELEVE_NOTES et PHOTO ne sont PAS dans required_documents → non exigés."""
+    _add_valid_doc(db_session, base_application, DocumentType.DIPLOME)
+    _add_valid_doc(db_session, base_application, DocumentType.CARTE_IDENTITE)
+    # On n'ajoute PAS RELEVE_NOTES ni PHOTO
+    db_session.refresh(base_application)
+
+    validator = ApplicationValidator(db_session)
+    is_complete, _, reasons = validator.validate(base_application)
+
+    assert is_complete is True
+    assert not any("RELEVE_NOTES" in r for r in reasons)
+    assert not any("PHOTO" in r for r in reasons)
+
+
+def test_dynamic_validator_detects_missing_required_doc(db_session, base_application, program_with_requirements):
+    """DIPLOME fourni mais CARTE_IDENTITE manquante → dossier incomplet."""
+    _add_valid_doc(db_session, base_application, DocumentType.DIPLOME)
+    # CARTE_IDENTITE manquante
+    db_session.refresh(base_application)
+
+    validator = ApplicationValidator(db_session)
+    is_complete, _, reasons = validator.validate(base_application)
+
+    assert is_complete is False
+    assert any("CARTE_IDENTITE" in r for r in reasons)
+
+
+def test_dynamic_validator_fallback_when_no_program_in_db(db_session, university):
+    """Aucun Program en base → fallback sur les 4 types hardcodés."""
+    app = Application(
+        id=uuid.uuid4(),
+        university_id=university.id,
+        student_phone="+22890999999",
+        student_name="Test Fallback",
+        program="Programme Inexistant en Base",
+        status=ApplicationStatus.COLLECTING,
+        conversation_state="COLLECT_DOCS",
+    )
+    db_session.add(app)
+    db_session.commit()
+    db_session.refresh(app)
+
+    validator = ApplicationValidator(db_session)
+    is_complete, _, reasons = validator.validate(app)
+
+    # Les 4 types hardcodés doivent être exigés
+    assert is_complete is False
+    assert any("DIPLOME" in r for r in reasons)
+    assert any("RELEVE_NOTES" in r for r in reasons)
+    assert any("CARTE_IDENTITE" in r for r in reasons)
+    assert any("PHOTO" in r for r in reasons)
+
+
+def test_dynamic_validator_fallback_when_no_required_docs_configured(db_session, university):
+    """Programme en base mais aucun RequiredDocument → fallback hardcodé."""
+    program = Program(
+        id=uuid.uuid4(),
+        university_id=university.id,
+        name="Master Vide",
+        is_active=True,
+    )
+    db_session.add(program)
+    app = Application(
+        id=uuid.uuid4(),
+        university_id=university.id,
+        student_phone="+22890888888",
+        student_name="Test Vide",
+        program="Master Vide",
+        status=ApplicationStatus.COLLECTING,
+        conversation_state="COLLECT_DOCS",
+    )
+    db_session.add(app)
+    db_session.commit()
+    db_session.refresh(app)
+
+    validator = ApplicationValidator(db_session)
+    _, _, reasons = validator.validate(app)
+
+    # Fallback : les 4 types hardcodés sont exigés
+    assert any("DIPLOME" in r for r in reasons)
+    assert any("RELEVE_NOTES" in r for r in reasons)
+
+
+def test_dynamic_validator_respects_order(db_session, base_application, program_with_requirements):
+    """get_required_doc_types retourne les types dans l'ordre 'order' configuré."""
+    _, req_docs = program_with_requirements  # order 0=DIPLOME, 1=CARTE_IDENTITE
+
+    validator = ApplicationValidator(db_session)
+    types = validator.get_required_doc_types(base_application)
+
+    assert types[0] == DocumentType.DIPLOME
+    assert types[1] == DocumentType.CARTE_IDENTITE
+    assert len(types) == 2
+
+
+def test_get_next_required_document_uses_dynamic_list():
+    """get_next_required_document avec required_types personnalisé."""
+    from app.services.whatsapp_bot import get_next_required_document
+    from app.models.application import Application
+
+    # Application mock minimale — pas besoin de DB ici
+    mock_app = MagicMock(spec=Application)
+    mock_app.documents = []  # aucun doc fourni
+
+    custom_types = [DocumentType.CARTE_IDENTITE, DocumentType.DIPLOME]
+    result = get_next_required_document(mock_app, required_types=custom_types)
+
+    # Le premier dans la liste custom est CARTE_IDENTITE
+    assert result == DocumentType.CARTE_IDENTITE
