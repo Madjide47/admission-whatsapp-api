@@ -67,51 +67,52 @@ docker compose exec api python scripts/create_university.py \
 
 > Copier et sauvegarder l'API Key, l'API Secret et le Webhook Secret affichés.
 
-### 3.2 Seeder un programme et ses documents requis
+### 3.2 Seeder des programmes (avec domaine + période d'inscription)
+
+> Chaque `Program` porte un `domain` (alimente la liste de domaines du bot) et,
+> optionnellement, une période `enrollment_start` / `enrollment_end`.
+> Ici on crée **2 programmes** : un avec inscriptions **ouvertes**, un avec
+> inscriptions **fermées** (pour démontrer le scénario d'attente).
+>
+> Les documents requis suivent le modèle Dev 1 (`Program → AdmissionForm →
+> RequiredDocument`). Sans `AdmissionForm` publié, le validator retombe sur les
+> 4 types par défaut (DIPLOME, RELEVE_NOTES, CARTE_IDENTITE, PHOTO) — suffisant
+> pour la démo. Pour des documents précis, utiliser l'API admin de Dev 1 ou l'import Boussole.
+
 ```bash
 docker compose exec api python -c "
+from datetime import date, timedelta
 from app.database import SessionLocal
 from app.models.university import University
 from app.models.program import Program
-from app.models.required_document import RequiredDocument
-from app.models.document import DocumentType
 import uuid
 
 db = SessionLocal()
 
-# Récupérer l'université
 univ = db.query(University).filter_by(name='Université de Lomé').first()
 print(f'Université : {univ.id}')
 
-# Créer le programme
-prog = Program(
-    id=uuid.uuid4(),
-    university_id=univ.id,
-    name='Licence Informatique',
-    is_active=True,
+# Programme 1 : inscriptions OUVERTES (domaine Informatique)
+prog_open = Program(
+    id=uuid.uuid4(), university_id=univ.id,
+    name='Licence Informatique', domain='Informatique', is_active=True,
+    enrollment_start=date.today() - timedelta(days=10),
+    enrollment_end=date.today() + timedelta(days=30),
 )
-db.add(prog)
-db.flush()
+db.add(prog_open)
 
-# Définir les 4 documents requis dans l'ordre
-for i, (doc_type, label) in enumerate([
-    (DocumentType.DIPLOME,        'Diplôme du baccalauréat'),
-    (DocumentType.RELEVE_NOTES,   'Relevé de notes'),
-    (DocumentType.CARTE_IDENTITE, 'Carte d\\'identité'),
-    (DocumentType.PHOTO,          'Photo d\\'identité'),
-]):
-    db.add(RequiredDocument(
-        id=uuid.uuid4(),
-        program_id=prog.id,
-        document_type=doc_type,
-        is_required=True,
-        label=label,
-        order=i,
-    ))
+# Programme 2 : inscriptions FERMÉES (domaine Médecine, ouvre dans 15 jours)
+prog_closed = Program(
+    id=uuid.uuid4(), university_id=univ.id,
+    name='Médecine Générale', domain='Médecine', is_active=True,
+    enrollment_start=date.today() + timedelta(days=15),
+    enrollment_end=date.today() + timedelta(days=60),
+)
+db.add(prog_closed)
 
 db.commit()
-print(f'Programme créé : {prog.name} ({prog.id})')
-print('4 documents requis configurés.')
+print(f'Programme OUVERT  : {prog_open.name} ({prog_open.domain})')
+print(f'Programme FERMÉ   : {prog_closed.name} ({prog_closed.domain})')
 db.close()
 "
 ```
@@ -122,9 +123,15 @@ docker compose exec postgres psql -U admission -d admission_db -c \
   "SELECT name, is_active FROM universities;"
 
 docker compose exec postgres psql -U admission -d admission_db -c \
-  "SELECT p.name, rd.document_type, rd.order
-   FROM programs p JOIN required_documents rd ON rd.program_id = p.id
-   ORDER BY rd.order;"
+  "SELECT name, domain, enrollment_start, enrollment_end FROM programs ORDER BY domain;"
+
+# Documents requis (modèle Dev 1 : via admission_forms → required_documents)
+docker compose exec postgres psql -U admission -d admission_db -c \
+  "SELECT p.name, rd.document_type, rd.\"order\"
+   FROM programs p
+   JOIN admission_forms f ON f.program_id = p.id
+   JOIN required_documents rd ON rd.form_id = f.id
+   ORDER BY p.name, rd.\"order\";"
 ```
 
 ---
@@ -144,7 +151,7 @@ export TO="whatsapp:+14155238886"
 
 ---
 
-### Étape 1 — Premier contact (état : WELCOME)
+### Étape 1 — Premier contact (état : WELCOME → COLLECT_INTEREST)
 
 **Message étudiant :**
 ```bash
@@ -154,24 +161,57 @@ curl -s -X POST "$API/whatsapp/incoming" \
 
 **Réponse bot attendue :**
 ```
-Bonjour ! 👋 Dans quelle université souhaitez-vous postuler ?
+Bonjour ! 👋 Je suis l'assistant d'admission universitaire.
 
-1. Université de Lomé
+Dans quel domaine souhaitez-vous poursuivre vos études ?
+
+1. Informatique
+2. Médecine
 
 Répondez avec le numéro de votre choix.
 ```
-*(Si 1 seule université : sélection auto, demande directement le nom)*
+*(Le bot demande d'abord le **domaine**. Les domaines viennent de `Program.domain`.
+Si aucun domaine n'est configuré : le bot liste directement les universités.)*
 
 **État DB attendu :**
 ```sql
 SELECT student_phone, status, conversation_state
 FROM applications ORDER BY created_at DESC LIMIT 1;
--- status: COLLECTING | conversation_state: CHOOSE_UNIVERSITY (ou COLLECT_NAME)
+-- status: COLLECTING | conversation_state: COLLECT_INTEREST
 ```
 
 ---
 
-### Étape 2 — Choix de l'université (état : CHOOSE_UNIVERSITY)
+### Étape 2 — Choix du domaine (état : COLLECT_INTEREST → CHOOSE_UNIVERSITY)
+
+```bash
+# "1" = Informatique (inscriptions ouvertes)
+curl -s -X POST "$API/whatsapp/incoming" \
+  -d "From=$FROM&To=$TO&Body=1&NumMedia=0"
+```
+
+**Réponse bot attendue :**
+```
+Voici les universités qui proposent des formations en Informatique :
+
+1. Université de Lomé
+
+Répondez avec le numéro de votre choix.
+```
+*(Si une seule université correspond au domaine : sélection auto, le bot demande
+directement le nom et passe à COLLECT_NAME.)*
+
+**État DB :**
+```sql
+SELECT conversation_state, ai_notes FROM applications
+ORDER BY created_at DESC LIMIT 1;
+-- conversation_state: CHOOSE_UNIVERSITY | ai_notes: Informatique (domaine mémorisé)
+-- (ou COLLECT_NAME si auto-sélection)
+```
+
+---
+
+### Étape 3 — Choix de l'université (état : CHOOSE_UNIVERSITY → COLLECT_NAME)
 
 ```bash
 curl -s -X POST "$API/whatsapp/incoming" \
@@ -194,12 +234,15 @@ ORDER BY created_at DESC LIMIT 1;
 
 ---
 
-### Étape 3 — Nom de l'étudiant (état : COLLECT_NAME)
+### Étape 4 — Nom de l'étudiant (état : COLLECT_NAME → CHOOSE_PROGRAM)
 
 ```bash
 curl -s -X POST "$API/whatsapp/incoming" \
   -d "From=$FROM&To=$TO&Body=Kofi+Mensah&NumMedia=0"
 ```
+
+> **Validation** : un nom avec chiffres (`Kofi123`) ou sans lettres est rejeté
+> avec un message explicatif. L'étudiant reste en COLLECT_NAME.
 
 **Réponse bot attendue :**
 ```
@@ -221,14 +264,14 @@ ORDER BY created_at DESC LIMIT 1;
 
 ---
 
-### Étape 4 — Choix du programme (état : CHOOSE_PROGRAM)
+### Étape 5 — Choix du programme (état : CHOOSE_PROGRAM → COLLECT_DOCS)
 
 ```bash
 curl -s -X POST "$API/whatsapp/incoming" \
   -d "From=$FROM&To=$TO&Body=1&NumMedia=0"
 ```
 
-**Réponse bot attendue :**
+**Réponse bot attendue (inscriptions ouvertes) :**
 ```
 ✅ Programme Licence Informatique sélectionné !
 
@@ -237,6 +280,9 @@ votre *diplôme* (ou attestation du baccalauréat).
 
 📎 En photo ou PDF directement dans cette conversation.
 ```
+
+> ⚠️ **Si le programme choisi a ses inscriptions fermées**, le bot bifurque vers
+> le scénario de la section **4 bis** ci-dessous au lieu de COLLECT_DOCS.
 
 **État DB :**
 ```sql
@@ -247,7 +293,7 @@ ORDER BY created_at DESC LIMIT 1;
 
 ---
 
-### Étape 5 — Envoi du diplôme (état : COLLECT_DOCS)
+### Étape 6 — Envoi du diplôme (état : COLLECT_DOCS)
 
 ```bash
 curl -s -X POST "$API/whatsapp/incoming" \
@@ -301,7 +347,7 @@ ORDER BY d.uploaded_at DESC LIMIT 1;
 
 ---
 
-### Étape 6 — Envoi des 3 documents restants
+### Étape 7 — Envoi des 3 documents restants
 
 Répéter le même curl pour relevé de notes, carte d'identité et photo :
 
@@ -329,7 +375,7 @@ curl -s -X POST "$API/whatsapp/incoming" \
 
 ---
 
-### Étape 7 — Dossier complet et transmis (état : VALIDATED)
+### Étape 8 — Dossier complet et transmis (état : VALIDATED)
 
 Quand le 4ème document est validé, le bot envoie automatiquement :
 ```
@@ -365,7 +411,7 @@ docker compose exec postgres psql -U admission -d admission_db -c \
 
 ---
 
-### Étape 8 — Décision de l'université (via l'API REST)
+### Étape 9 — Décision de l'université (via l'API REST)
 
 ```bash
 # Récupérer l'ID de la candidature
@@ -397,9 +443,9 @@ FROM applications ORDER BY created_at DESC LIMIT 1;
 
 ---
 
-### Étape bonus — Commande "statut" en cours de route
+### Étape bonus A — Commande "statut" en cours de route
 
-À n'importe quel moment pendant la collecte :
+À n'importe quel moment pendant la collecte (interceptée globalement) :
 ```bash
 curl -s -X POST "$API/whatsapp/incoming" \
   -d "From=$FROM&To=$TO&Body=statut&NumMedia=0"
@@ -416,6 +462,158 @@ curl -s -X POST "$API/whatsapp/incoming" \
 
 Envoyez les documents manquants pour finaliser votre candidature.
 ```
+
+### Étape bonus B — Commande "aide" (aide contextuelle)
+
+```bash
+curl -s -X POST "$API/whatsapp/incoming" \
+  -d "From=$FROM&To=$TO&Body=aide&NumMedia=0"
+```
+
+**Réponse attendue (adaptée à l'état courant)** — ex. en COLLECT_DOCS :
+```
+ℹ️ *Aide* :
+
+Envoyez vos documents en photo ou PDF directement ici.
+Tapez statut pour voir les documents déjà reçus et ceux qui manquent.
+```
+
+### Étape bonus C — Réponse invalide à un choix numéroté
+
+```bash
+# L'étudiant tape du texte au lieu d'un numéro à l'étape du domaine
+curl -s -X POST "$API/whatsapp/incoming" \
+  -d "From=$FROM&To=$TO&Body=je+veux+informatique&NumMedia=0"
+```
+
+**Réponse attendue :**
+```
+Je n'ai pas compris « je veux informatique ». Répondez avec un numéro entre 1 et 2.
+
+1. Informatique
+2. Médecine
+```
+
+---
+
+## 4 bis. Scénario — Inscriptions fermées
+
+> Ce scénario démontre le cas où le programme choisi n'est pas encore en
+> période d'inscription. Utiliser un **nouveau numéro** d'étudiant pour repartir
+> à zéro, et choisir le domaine *Médecine* (programme fermé seedé en 3.2).
+
+```bash
+export FROM2="whatsapp:+22890999888"
+
+# 1. Démarrage → liste des domaines
+curl -s -X POST "$API/whatsapp/incoming" -d "From=$FROM2&To=$TO&Body=Bonjour&NumMedia=0"
+
+# 2. Choix du domaine Médecine (= "2")
+curl -s -X POST "$API/whatsapp/incoming" -d "From=$FROM2&To=$TO&Body=2&NumMedia=0"
+
+# 3. Choix de l'université (= "1") — auto si une seule
+curl -s -X POST "$API/whatsapp/incoming" -d "From=$FROM2&To=$TO&Body=1&NumMedia=0"
+
+# 4. Nom
+curl -s -X POST "$API/whatsapp/incoming" -d "From=$FROM2&To=$TO&Body=Ama+Koffi&NumMedia=0"
+
+# 5. Choix du programme Médecine Générale (= "1") → inscriptions FERMÉES
+curl -s -X POST "$API/whatsapp/incoming" -d "From=$FROM2&To=$TO&Body=1&NumMedia=0"
+```
+
+**Réponse bot attendue à l'étape 5 :**
+```
+⚠️ Les inscriptions pour Médecine Générale ne sont pas encore ouvertes.
+
+📅 Ouverture : 20/06/2026
+📅 Fermeture : 04/08/2026
+
+Que souhaitez-vous faire ?
+
+1️⃣ Je reviendrai pendant la période d'inscription
+2️⃣ Je dépose ma candidature maintenant (elle sera envoyée à l'université dès l'ouverture)
+```
+
+**État DB :**
+```sql
+SELECT conversation_state FROM applications WHERE student_phone = '+22890999888';
+-- conversation_state: AWAITING_ENROLLMENT_CHOICE
+```
+
+### Option 1 — Reporter
+
+```bash
+curl -s -X POST "$API/whatsapp/incoming" -d "From=$FROM2&To=$TO&Body=1&NumMedia=0"
+```
+**Réponse :**
+```
+D'accord ! Revenez pendant la période d'inscription pour postuler. 😊
+
+📅 Les inscriptions ouvrent le 20/06/2026.
+
+Envoyez Bonjour quand vous êtes prêt(e).
+```
+**État DB :** la candidature est **supprimée**.
+```sql
+SELECT COUNT(*) FROM applications WHERE student_phone = '+22890999888';
+-- 0
+```
+
+### Option 2 — Déposer maintenant (dépôt anticipé)
+
+```bash
+curl -s -X POST "$API/whatsapp/incoming" -d "From=$FROM2&To=$TO&Body=2&NumMedia=0"
+```
+**Réponse :**
+```
+✅ Votre candidature sera transmise à l'université dès l'ouverture des inscriptions.
+
+Constituons votre dossier dès maintenant. Commençons par votre *diplôme*...
+```
+
+L'étudiant envoie ensuite ses 4 documents (comme en étapes 6-7). Une fois le
+dossier complet, **au lieu de partir directement**, il passe en attente :
+
+**État DB après dossier complet :**
+```sql
+SELECT status FROM applications WHERE student_phone = '+22890999888';
+-- status: PENDING_ENROLLMENT
+```
+
+**Notification WhatsApp reçue :**
+```
+✅ Vos documents ont tous été validés, votre dossier est complet !
+
+🗓️ Les inscriptions ne sont pas encore ouvertes. Votre candidature sera
+automatiquement envoyée à l'université dès l'ouverture.
+```
+
+### Déclenchement automatique à l'ouverture
+
+La tâche **Celery Beat quotidienne** `check_enrollment_periods` (6h00) détecte
+l'ouverture et envoie les candidatures en attente. Pour la **tester
+immédiatement** en démo :
+
+```bash
+docker compose exec worker-ai python -c "
+from app.workers.enrollment_tasks import check_enrollment_periods_task
+print(check_enrollment_periods_task.run())
+"
+# → dispatched:N   (N = nb de candidatures envoyées dont la période est ouverte)
+```
+
+> Pour forcer l'ouverture en démo, re-seeder le programme Médecine avec
+> `enrollment_start=date.today()` puis relancer la commande ci-dessus.
+
+**Notification WhatsApp envoyée à l'étudiant :**
+```
+🎉 Bonne nouvelle ! Les inscriptions pour votre programme sont maintenant ouvertes.
+
+Votre candidature est en cours de traitement et sera envoyée à l'université
+dans les prochaines minutes. 🚀
+```
+
+**État DB final :** `PENDING_ENROLLMENT` → `VALIDATED` → `SENT_TO_UNIVERSITY`.
 
 ---
 
@@ -461,6 +659,8 @@ curl http://localhost:8000/health
 | Bot ne répond pas | Worker OCR/AI éteint | `docker compose restart worker-ocr worker-ai` |
 | `❌ Document non valide` systématique | Image trop petite / OCR vide | Utiliser une vraie image avec du texte, ou mettre `AI_MOCK=true` |
 | `Aucune université disponible` | Pas de seed | Relancer l'étape 3 |
+| Bot liste les universités au lieu des domaines | `Program.domain` non renseigné | Re-seeder avec `domain=...` (étape 3.2) |
+| Candidature bloquée en `PENDING_ENROLLMENT` | Inscriptions encore fermées | Normal — lancer `check_enrollment_periods_task` ou avancer `enrollment_start` |
 | Webhook non reçu | `webhook_url` incorrecte | Vérifier dans `universities`, utiliser webhook.site |
 | `503 Service Unavailable` | API pas encore démarrée | Attendre 10s et réessayer |
 
@@ -470,26 +670,33 @@ curl http://localhost:8000/health
 
 > Si ces éléments ne sont pas livrés avant la démo, utiliser le workaround.
 
+> Détail complet et à jour dans `docs/STUBS_DEV1.md`.
+
 | Besoin | Statut | Workaround |
 |--------|--------|-----------|
-| Migration `0002_add_programs.py` | ⏳ À créer | Créer la table manuellement via le script Python de l'étape 3.2 |
-| Migration `0003_add_required_documents.py` | ⏳ À créer | Idem — le script Python crée les tables via `Base.metadata.create_all` |
-| Seeding programmes en production | ⏳ À définir | Script Python de l'étape 3.2 suffit pour la démo |
+| Migration `0002` : tables formulaires dynamiques (`programs`, `admission_forms`, `form_fields`, `required_documents`, `application_field_values`) | ⏳ À créer | `Base.metadata.create_all` (workaround ci-dessous) |
+| Migration `0003` : `programs.enrollment_start` / `enrollment_end` | ⏳ À créer | idem |
+| Migration `0004` : `PENDING_ENROLLMENT` dans `application_status_enum` | ⏳ À créer | En SQLite (démo) l'enum est libre ; en PostgreSQL `ALTER TYPE ... ADD VALUE` |
+| Enregistrer `check_enrollment_periods` dans Celery Beat (`crontab(hour=6, minute=0)`) | ⏳ À créer | Lancer la tâche à la main (cf. 4 bis) |
+| Seeding programmes en production | ⏳ À définir | Script Python de l'étape 3.2 |
 
 ### Activer le workaround migrations (si Dev 1 n'a pas livré)
 
 ```bash
-# Créer les tables stubs directement depuis Python (bypasse Alembic)
+# Crée toutes les tables connues des modèles directement (bypasse Alembic)
 docker compose exec api python -c "
+import app.models  # importe tous les modèles dans Base.metadata
 from app.database import engine, Base
-from app.models.program import Program
-from app.models.required_document import RequiredDocument
-Base.metadata.create_all(engine, tables=[
-    Program.__table__,
-    RequiredDocument.__table__,
-])
-print('Tables programs et required_documents créées.')
+Base.metadata.create_all(engine)
+print('Tables créées depuis les modèles.')
 "
+```
+
+### Ajouter PENDING_ENROLLMENT à l'enum PostgreSQL (si Dev 1 n'a pas livré)
+
+```bash
+docker compose exec postgres psql -U admission -d admission_db -c \
+  "ALTER TYPE application_status_enum ADD VALUE IF NOT EXISTS 'PENDING_ENROLLMENT';"
 ```
 
 ---
@@ -499,13 +706,37 @@ print('Tables programs et required_documents créées.')
 | Fichier | Rôle | Couverture tests |
 |---------|------|-----------------|
 | `app/api/whatsapp/twilio_webhook.py` | Endpoint Twilio | 94% |
-| `app/services/whatsapp_bot.py` | Machine à états + flow université/programme | 85% |
+| `app/services/whatsapp_bot.py` | Machine à états : domaine → université → programme → docs, validation des saisies, périodes d'inscription | 85% |
 | `app/services/ai_classifier.py` | Gemini Flash + Anthropic | 91% |
 | `app/services/ocr_service.py` | Tesseract OCR | 94% |
-| `app/services/validator.py` | Validation dynamique via RequiredDocument | 94% |
+| `app/services/validator.py` | Validation dynamique (Program → AdmissionForm → RequiredDocument) + fallback 4 types | 94% |
 | `app/workers/ocr_tasks.py` | Pipeline OCR async | 95% |
-| `app/workers/ai_tasks.py` | Pipeline IA async + feedback WhatsApp | 95% |
-| `app/models/program.py` | Stub Programme *(TODO migration Dev 1)* | — |
-| `app/models/required_document.py` | Stub Documents requis *(TODO migration Dev 1)* | — |
+| `app/workers/ai_tasks.py` | Pipeline IA async + feedback WhatsApp + bascule PENDING_ENROLLMENT | 95% |
+| `app/workers/enrollment_tasks.py` | Tâche Beat quotidienne d'ouverture des inscriptions | — |
 
-**Total tests Dev 2 : 128 tests, 0 échec.**
+> Modèles (`Program`, `AdmissionForm`, `RequiredDocument`, `Application`) = périmètre Dev 1.
+> Dev 2 y a seulement ajouté `enrollment_start/end` + `is_enrollment_open()` sur `Program`
+> et `PENDING_ENROLLMENT` sur `ApplicationStatus`.
+
+**Total tests : 164, 0 échec.**
+
+### Flow conversationnel complet (résumé)
+
+```
+WELCOME
+  → COLLECT_INTEREST      (choix du domaine, liste numérotée)
+  → CHOOSE_UNIVERSITY     (universités filtrées par domaine)
+  → COLLECT_NAME          (validation : lettres, pas de chiffres)
+  → CHOOSE_PROGRAM        (ou COLLECT_PROGRAM en texte libre)
+       │
+       ├─ inscriptions ouvertes → COLLECT_DOCS
+       └─ inscriptions fermées  → AWAITING_ENROLLMENT_CHOICE
+              ├─ 1. reporter        → candidature supprimée
+              └─ 2. déposer         → COLLECT_DOCS (envoi différé)
+  → COLLECT_DOCS          (documents un par un, feedback ✅/❌)
+  → VALIDATED              (inscriptions ouvertes → webhook immédiat)
+     ou PENDING_ENROLLMENT (inscriptions fermées → webhook à l'ouverture)
+  → SENT_TO_UNIVERSITY → ACCEPTED / REJECTED
+
+Commandes globales (tout état) : statut, aide/help
+```
