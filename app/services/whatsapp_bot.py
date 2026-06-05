@@ -8,7 +8,7 @@ import logging
 import re
 from enum import Enum
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client as TwilioClient
@@ -26,7 +26,8 @@ class ConversationState(str, Enum):
     """États de la machine de conversation WhatsApp."""
 
     WELCOME = "WELCOME"
-    CHOOSE_UNIVERSITY = "CHOOSE_UNIVERSITY"   # v2 : sélection université depuis une liste
+    COLLECT_INTEREST = "COLLECT_INTEREST"     # v2 : domaine d'intérêt pour filtrer les universités
+    CHOOSE_UNIVERSITY = "CHOOSE_UNIVERSITY"   # v2 : sélection université depuis une liste filtrée
     COLLECT_NAME = "COLLECT_NAME"
     CHOOSE_PROGRAM = "CHOOSE_PROGRAM"         # v2 : sélection programme depuis une liste
     COLLECT_PROGRAM = "COLLECT_PROGRAM"       # fallback texte libre (pas de programmes configurés)
@@ -144,6 +145,7 @@ class WhatsAppBot:
         state = ConversationState(application.conversation_state or ConversationState.WELCOME.value)
         handler = {
             ConversationState.WELCOME: self._handle_welcome,
+            ConversationState.COLLECT_INTEREST: self._handle_collect_interest,
             ConversationState.CHOOSE_UNIVERSITY: self._handle_choose_university,
             ConversationState.COLLECT_NAME: self._handle_collect_name,
             ConversationState.CHOOSE_PROGRAM: self._handle_choose_program,
@@ -185,43 +187,76 @@ class WhatsAppBot:
             )
             return {"state": application.conversation_state, "action": "prompt_trigger"}
 
-        universities = self._list_universities()
+        self.send_message(
+            application.student_phone,
+            "Bonjour ! 👋 Je suis l'assistant d'admission universitaire.\n\n"
+            "Pour vous orienter vers les universités adaptées à votre profil, "
+            "dans quel *domaine* souhaitez-vous poursuivre vos études ?\n\n"
+            "Exemples : *informatique*, *médecine*, *droit*, *gestion*, *sciences*...",
+        )
+        application.conversation_state = ConversationState.COLLECT_INTEREST.value
+        self.db.add(application)
+        self.db.commit()
+        return {"state": application.conversation_state, "action": "asked_interest"}
+
+    def _handle_collect_interest(self, application: Application, text: str) -> dict:
+        interest = text.strip()
+        if len(interest) < 2:
+            self.send_message(
+                application.student_phone,
+                "Merci de préciser votre domaine d'intérêt (ex : informatique, médecine, droit...).",
+            )
+            return {"state": application.conversation_state, "action": "interest_too_short"}
+
+        universities = self._find_universities_by_interest(interest)
 
         if not universities:
-            self.send_message(
-                application.student_phone,
-                "Désolé, aucune université n'est disponible pour le moment. "
-                "Réessayez plus tard. 🙏",
-            )
-            return {"state": application.conversation_state, "action": "no_university"}
+            # Aucun programme ne correspond → fallback sur toutes les universités
+            universities = self._list_universities()
+            if not universities:
+                self.send_message(
+                    application.student_phone,
+                    "Désolé, aucune université n'est disponible pour le moment. 🙏",
+                )
+                return {"state": application.conversation_state, "action": "no_university"}
 
-        if len(universities) == 1:
-            # Sélection automatique — inutile de demander
-            application.university_id = universities[0].id
-            application.conversation_state = ConversationState.COLLECT_NAME.value
-            self.db.add(application)
-            self.db.commit()
-            self.send_message(
-                application.student_phone,
-                f"Bonjour ! 👋 Bienvenue à *{universities[0].name}*. "
-                "Je vais vous aider à soumettre votre dossier. 🚀\n\n"
-                "Pour commencer, quel est votre *nom complet* ?",
-            )
-            return {"state": application.conversation_state, "action": "asked_name"}
+            lines = [
+                f"Aucune université ne propose spécifiquement *{interest}* pour le moment.\n",
+                "Voici toutes les universités disponibles :\n",
+            ]
+            for i, u in enumerate(universities, start=1):
+                lines.append(f"{i}. {u.name}")
+            lines.append("\nRépondez avec le *numéro* de votre choix.")
+            self.send_message(application.student_phone, "\n".join(lines))
+        else:
+            lines = [
+                f"Voici les universités qui proposent des formations en *{interest}* :\n"
+            ]
+            for i, u in enumerate(universities, start=1):
+                lines.append(f"{i}. {u.name}")
+            lines.append("\nRépondez avec le *numéro* de votre choix.")
+            self.send_message(application.student_phone, "\n".join(lines))
 
-        # Plusieurs universités — liste numérotée
-        lines = ["Bonjour ! 👋 Dans quelle université souhaitez-vous postuler ?\n"]
-        for i, u in enumerate(universities, start=1):
-            lines.append(f"{i}. {u.name}")
-        lines.append("\nRépondez avec le *numéro* de votre choix.")
-        self.send_message(application.student_phone, "\n".join(lines))
+        # Stocker le domaine temporairement pour filtrer dans _handle_choose_university
+        application.ai_notes = interest
         application.conversation_state = ConversationState.CHOOSE_UNIVERSITY.value
         self.db.add(application)
         self.db.commit()
-        return {"state": application.conversation_state, "action": "listed_universities"}
+        return {
+            "state": application.conversation_state,
+            "action": "listed_universities",
+            "interest": interest,
+            "count": len(universities),
+        }
 
     def _handle_choose_university(self, application: Application, text: str) -> dict:
-        universities = self._list_universities()
+        # Reconstruire la même liste que celle montrée dans _handle_collect_interest
+        interest = application.ai_notes
+        if interest:
+            universities = self._find_universities_by_interest(interest) or self._list_universities()
+        else:
+            universities = self._list_universities()
+
         idx = self._parse_numeric_choice(text, len(universities))
 
         if idx is None:
@@ -233,6 +268,7 @@ class WhatsAppBot:
 
         chosen = universities[idx]
         application.university_id = chosen.id
+        application.ai_notes = None  # libère le stockage temporaire de l'intérêt
         application.conversation_state = ConversationState.COLLECT_NAME.value
         self.db.add(application)
         self.db.commit()
@@ -493,6 +529,38 @@ class WhatsAppBot:
         """
         from app.services.validator import ApplicationValidator
         return ApplicationValidator(self.db).get_required_doc_types(application)
+
+    def _find_universities_by_interest(self, interest: str) -> list[University]:
+        """Retourne les universités actives ayant au moins un programme correspondant au domaine.
+
+        La recherche est insensible à la casse. Retourne [] si aucun programme n'est configuré
+        ou si aucun ne correspond (l'appelant doit gérer le fallback).
+        """
+        keyword = f"%{interest.strip().lower()}%"
+        matching_university_ids = list(
+            self.db.execute(
+                select(Program.university_id)
+                .where(
+                    Program.is_active.is_(True),
+                    func.lower(Program.name).like(keyword),
+                )
+                .distinct()
+            ).scalars().all()
+        )
+
+        if not matching_university_ids:
+            return []
+
+        return list(
+            self.db.execute(
+                select(University)
+                .where(
+                    University.id.in_(matching_university_ids),
+                    University.is_active.is_(True),
+                )
+                .order_by(University.name)
+            ).scalars().all()
+        )
 
     def _list_universities(self) -> list[University]:
         """Retourne les universités actives triées par nom."""

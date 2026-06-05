@@ -78,12 +78,15 @@ def application(db_session, university) -> Application:
 # ---------------------------------------------------------------------------
 
 
-def test_welcome_transitions_to_collect_name(bot, application, db_session):
+def test_welcome_asks_for_interest(bot, application, db_session):
+    """WELCOME + mot-clé → demande le domaine d'intérêt (COLLECT_INTEREST)."""
     result = bot._handle_welcome(application, "Bonjour")
     db_session.refresh(application)
-    assert application.conversation_state == ConversationState.COLLECT_NAME.value
-    assert result["action"] == "asked_name"
+    assert application.conversation_state == ConversationState.COLLECT_INTEREST.value
+    assert result["action"] == "asked_interest"
     bot._mock_twilio.messages.create.assert_called_once()
+    sent_body = bot._mock_twilio.messages.create.call_args.kwargs["body"]
+    assert "domaine" in sent_body.lower()
 
 
 def test_collect_name_rejects_short_name(bot, application, db_session):
@@ -130,11 +133,21 @@ def test_collect_program_transitions_to_collect_docs(bot, application, db_sessio
 
 
 def test_handle_incoming_text_full_flow(bot, application, db_session, university):
-    """Simule une conversation complète : bienvenue → nom → programme."""
+    """Simule une conversation complète : bienvenue → intérêt → université → nom → programme."""
     phone = application.student_phone
 
-    # WELCOME
+    # WELCOME → COLLECT_INTEREST
     bot.handle_incoming_message(phone, "Bonjour", university=university)
+    db_session.refresh(application)
+    assert application.conversation_state == ConversationState.COLLECT_INTEREST.value
+
+    # COLLECT_INTEREST → CHOOSE_UNIVERSITY
+    bot.handle_incoming_message(phone, "informatique", university=university)
+    db_session.refresh(application)
+    assert application.conversation_state == ConversationState.CHOOSE_UNIVERSITY.value
+
+    # CHOOSE_UNIVERSITY → COLLECT_NAME
+    bot.handle_incoming_message(phone, "1", university=university)
     db_session.refresh(application)
     assert application.conversation_state == ConversationState.COLLECT_NAME.value
 
@@ -481,24 +494,99 @@ def second_program(db_session, university) -> Program:
     return p
 
 
-def test_welcome_single_university_auto_selects(bot, application, university, db_session):
-    """Une seule université active → sélection auto, demande le nom directement."""
+def test_welcome_single_university_asks_interest(bot, application, university, db_session):
+    """Même avec une seule université, le bot demande d'abord le domaine d'intérêt."""
     result = bot._handle_welcome(application, "Bonjour")
     db_session.refresh(application)
-    assert application.conversation_state == ConversationState.COLLECT_NAME.value
-    assert application.university_id == university.id
-    assert result["action"] == "asked_name"
+    assert application.conversation_state == ConversationState.COLLECT_INTEREST.value
+    assert result["action"] == "asked_interest"
 
 
-def test_welcome_multiple_universities_shows_list(bot, application, university, second_university, db_session):
-    """Plusieurs universités → liste numérotée, transition vers CHOOSE_UNIVERSITY."""
+def test_welcome_multiple_universities_asks_interest(bot, application, university, second_university, db_session):
+    """Plusieurs universités → le bot demande d'abord le domaine d'intérêt."""
     result = bot._handle_welcome(application, "Bonjour")
     db_session.refresh(application)
+    assert application.conversation_state == ConversationState.COLLECT_INTEREST.value
+    assert result["action"] == "asked_interest"
+
+
+# ---------------------------------------------------------------------------
+# Flow COLLECT_INTEREST
+# ---------------------------------------------------------------------------
+
+
+def test_collect_interest_matches_program_shows_filtered_list(
+    bot, application, university, second_university, program, db_session
+):
+    """Intérêt 'informatique' → seule l'université avec ce programme est listée."""
+    application.conversation_state = ConversationState.COLLECT_INTEREST.value
+    db_session.add(application)
+    db_session.commit()
+
+    result = bot._handle_collect_interest(application, "informatique")
+    db_session.refresh(application)
+
     assert application.conversation_state == ConversationState.CHOOSE_UNIVERSITY.value
     assert result["action"] == "listed_universities"
+    assert result["count"] == 1  # seule une université a un programme d'info
     sent_body = bot._mock_twilio.messages.create.call_args.kwargs["body"]
-    assert "1." in sent_body
-    assert "2." in sent_body
+    assert university.name in sent_body
+
+
+def test_collect_interest_no_match_shows_all_universities(
+    bot, application, university, second_university, db_session
+):
+    """Intérêt inconnu → fallback sur toutes les universités disponibles."""
+    application.conversation_state = ConversationState.COLLECT_INTEREST.value
+    db_session.add(application)
+    db_session.commit()
+
+    result = bot._handle_collect_interest(application, "archéologie sous-marine")
+    db_session.refresh(application)
+
+    assert application.conversation_state == ConversationState.CHOOSE_UNIVERSITY.value
+    # Les deux universités doivent être listées (fallback)
+    sent_body = bot._mock_twilio.messages.create.call_args.kwargs["body"]
+    assert university.name in sent_body
+    assert second_university.name in sent_body
+
+
+def test_collect_interest_stores_keyword_in_ai_notes(bot, application, university, program, db_session):
+    """L'intérêt est stocké dans ai_notes pour filtrer dans CHOOSE_UNIVERSITY."""
+    application.conversation_state = ConversationState.COLLECT_INTEREST.value
+    db_session.add(application)
+    db_session.commit()
+
+    bot._handle_collect_interest(application, "Informatique")
+    db_session.refresh(application)
+
+    assert application.ai_notes == "Informatique"
+
+
+def test_collect_interest_too_short(bot, application, db_session):
+    """Intérêt trop court → reste en COLLECT_INTEREST."""
+    application.conversation_state = ConversationState.COLLECT_INTEREST.value
+    db_session.add(application)
+    db_session.commit()
+
+    result = bot._handle_collect_interest(application, "a")
+    assert result["action"] == "interest_too_short"
+    assert application.conversation_state == ConversationState.COLLECT_INTEREST.value
+
+
+def test_choose_university_uses_filtered_list(bot, application, university, second_university, program, db_session):
+    """CHOOSE_UNIVERSITY refiltre par intérêt stocké dans ai_notes."""
+    application.conversation_state = ConversationState.CHOOSE_UNIVERSITY.value
+    application.ai_notes = "informatique"  # intérêt stocké
+    db_session.add(application)
+    db_session.commit()
+
+    result = bot._handle_choose_university(application, "1")
+    db_session.refresh(application)
+
+    assert application.conversation_state == ConversationState.COLLECT_NAME.value
+    assert application.university_id == university.id  # celle avec le programme info
+    assert application.ai_notes is None  # intérêt effacé après usage
 
 
 def test_choose_university_valid_choice(bot, application, university, second_university, db_session):
