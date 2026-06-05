@@ -95,7 +95,7 @@ def test_collect_name_rejects_short_name(bot, application, db_session):
     db_session.commit()
 
     result = bot._handle_collect_name(application, "A")
-    assert result["action"] == "name_too_short"
+    assert result["action"] == "name_invalid"
     assert application.conversation_state == ConversationState.COLLECT_NAME.value
 
 
@@ -117,7 +117,7 @@ def test_collect_program_rejects_short_program(bot, application, db_session):
     db_session.commit()
 
     result = bot._handle_collect_program(application, "Li")
-    assert result["action"] == "program_too_short"
+    assert result["action"] == "program_invalid"
 
 
 def test_collect_program_transitions_to_collect_docs(bot, application, db_session):
@@ -712,6 +712,147 @@ def test_choose_program_invalid_choice_shows_list_again(bot, application, univer
     result = bot._handle_choose_program(application, "0")
     assert application.conversation_state == ConversationState.CHOOSE_PROGRAM.value
     assert result["action"] == "invalid_program_choice"
+
+
+# ---------------------------------------------------------------------------
+# Validateurs statiques
+# ---------------------------------------------------------------------------
+
+
+def test_validate_name_valid():
+    assert WhatsAppBot._validate_name("Kofi Mensah") is None
+    assert WhatsAppBot._validate_name("Aïcha Traoré-Diallo") is None
+    assert WhatsAppBot._validate_name("Jean-Paul") is None
+
+
+def test_validate_name_too_short():
+    assert WhatsAppBot._validate_name("A") is not None
+    assert WhatsAppBot._validate_name("  ") is not None
+
+
+def test_validate_name_too_long():
+    assert WhatsAppBot._validate_name("A" * 101) is not None
+
+
+def test_validate_name_with_digits():
+    result = WhatsAppBot._validate_name("Kofi123")
+    assert result is not None
+    assert "chiffres" in result.lower()
+
+
+def test_validate_name_no_letters():
+    assert WhatsAppBot._validate_name("123456") is not None
+
+
+def test_validate_program_valid():
+    assert WhatsAppBot._validate_program_text("Licence Informatique") is None
+    assert WhatsAppBot._validate_program_text("Master Droit des Affaires") is None
+
+
+def test_validate_program_too_short():
+    assert WhatsAppBot._validate_program_text("Li") is not None
+
+
+def test_validate_program_no_letters():
+    assert WhatsAppBot._validate_program_text("123") is not None
+
+
+def test_validate_program_too_long():
+    assert WhatsAppBot._validate_program_text("A" * 151) is not None
+
+
+def test_choice_error_out_of_range():
+    msg = WhatsAppBot._choice_error("5", 3)
+    assert "5" in msg
+    assert "1" in msg and "3" in msg
+
+
+def test_choice_error_non_numeric():
+    msg = WhatsAppBot._choice_error("informatique", 3)
+    assert "informatique" in msg
+    assert "numéro" in msg.lower()
+
+
+# ---------------------------------------------------------------------------
+# Commandes globales (statut, aide) depuis n'importe quel état
+# ---------------------------------------------------------------------------
+
+
+def test_global_statut_command_from_collect_name(bot, application, db_session):
+    """'statut' depuis COLLECT_NAME → envoi du statut du dossier."""
+    application.conversation_state = ConversationState.COLLECT_NAME.value
+    db_session.add(application)
+    db_session.commit()
+
+    result = bot.handle_incoming_message(application.student_phone, "statut")
+    assert result["action"] == "status_sent"
+
+
+def test_global_aide_command_from_choose_university(bot, application, university, second_university, db_session):
+    """'aide' depuis CHOOSE_UNIVERSITY → message d'aide contextuel."""
+    application.conversation_state = ConversationState.CHOOSE_UNIVERSITY.value
+    db_session.add(application)
+    db_session.commit()
+
+    result = bot.handle_incoming_message(application.student_phone, "aide")
+    assert result["action"] == "help_sent"
+    sent_body = bot._mock_twilio.messages.create.call_args.kwargs["body"]
+    assert "numéro" in sent_body.lower()
+
+
+def test_global_aide_command_from_collect_docs(bot, application, db_session):
+    """'help' depuis COLLECT_DOCS → message d'aide contextuel."""
+    application.conversation_state = ConversationState.COLLECT_DOCS.value
+    db_session.add(application)
+    db_session.commit()
+
+    result = bot.handle_incoming_message(application.student_phone, "help")
+    assert result["action"] == "help_sent"
+
+
+def test_name_with_digits_rejected(bot, application, db_session):
+    """Nom contenant des chiffres → rejeté avec message explicatif."""
+    application.conversation_state = ConversationState.COLLECT_NAME.value
+    db_session.add(application)
+    db_session.commit()
+
+    result = bot._handle_collect_name(application, "Kofi123")
+    assert result["action"] == "name_invalid"
+    assert application.student_name is None  # pas enregistré
+    sent_body = bot._mock_twilio.messages.create.call_args.kwargs["body"]
+    assert "chiffres" in sent_body.lower()
+
+
+def test_program_without_letters_rejected(bot, application, db_session):
+    """Programme sans lettres → rejeté."""
+    application.conversation_state = ConversationState.COLLECT_PROGRAM.value
+    db_session.add(application)
+    db_session.commit()
+
+    result = bot._handle_collect_program(application, "12345")
+    assert result["action"] == "program_invalid"
+
+
+def test_choice_error_message_out_of_range(bot, application, university, second_university, db_session):
+    """Numéro hors plage dans CHOOSE_UNIVERSITY → message précis avec le numéro saisi."""
+    application.conversation_state = ConversationState.CHOOSE_UNIVERSITY.value
+    db_session.add(application)
+    db_session.commit()
+
+    bot._handle_choose_university(application, "99")
+    sent_body = bot._mock_twilio.messages.create.call_args.kwargs["body"]
+    assert "99" in sent_body
+
+
+def test_choice_error_message_non_numeric(bot, application, university, second_university, db_session):
+    """Texte au lieu d'un numéro dans CHOOSE_UNIVERSITY → message d'aide."""
+    application.conversation_state = ConversationState.CHOOSE_UNIVERSITY.value
+    db_session.add(application)
+    db_session.commit()
+
+    bot._handle_choose_university(application, "je veux la première")
+    sent_body = bot._mock_twilio.messages.create.call_args.kwargs["body"]
+    assert "numéro" in sent_body.lower()
 
 
 def test_parse_numeric_choice_valid():
