@@ -34,6 +34,12 @@ class Program(Base):
         index=True,
     )
     name: Mapped[str] = mapped_column(sa.String(255), nullable=False)
+    domain: Mapped[str | None] = mapped_column(
+        sa.String(100),
+        nullable=True,
+        index=True,
+        comment="Domaine académique affiché à l'étudiant (ex: Informatique, Médecine, Droit)",
+    )
     description: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(sa.Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(

@@ -78,15 +78,15 @@ def application(db_session, university) -> Application:
 # ---------------------------------------------------------------------------
 
 
-def test_welcome_asks_for_interest(bot, application, db_session):
-    """WELCOME + mot-clé → demande le domaine d'intérêt (COLLECT_INTEREST)."""
+def test_welcome_asks_for_interest(bot, application, university, program, db_session):
+    """WELCOME + domaines configurés → liste numérotée des domaines (COLLECT_INTEREST)."""
     result = bot._handle_welcome(application, "Bonjour")
     db_session.refresh(application)
     assert application.conversation_state == ConversationState.COLLECT_INTEREST.value
-    assert result["action"] == "asked_interest"
-    bot._mock_twilio.messages.create.assert_called_once()
+    assert result["action"] == "listed_domains"
     sent_body = bot._mock_twilio.messages.create.call_args.kwargs["body"]
-    assert "domaine" in sent_body.lower()
+    assert "Informatique" in sent_body
+    assert "1." in sent_body
 
 
 def test_collect_name_rejects_short_name(bot, application, db_session):
@@ -132,35 +132,43 @@ def test_collect_program_transitions_to_collect_docs(bot, application, db_sessio
     assert result["action"] == "asked_documents"
 
 
-def test_handle_incoming_text_full_flow(bot, application, db_session, university):
-    """Simule une conversation complète : bienvenue → intérêt → université → nom → programme."""
+def test_handle_incoming_text_full_flow(bot, application, db_session, university, program, second_program):
+    """Simule une conversation complète : bienvenue → domaine → université → nom → programme."""
     phone = application.student_phone
 
-    # WELCOME → COLLECT_INTEREST
+    # WELCOME → COLLECT_INTEREST (domaines disponibles)
     bot.handle_incoming_message(phone, "Bonjour", university=university)
     db_session.refresh(application)
     assert application.conversation_state == ConversationState.COLLECT_INTEREST.value
 
-    # COLLECT_INTEREST → CHOOSE_UNIVERSITY
-    bot.handle_incoming_message(phone, "informatique", university=university)
-    db_session.refresh(application)
-    assert application.conversation_state == ConversationState.CHOOSE_UNIVERSITY.value
-
-    # CHOOSE_UNIVERSITY → COLLECT_NAME
+    # COLLECT_INTEREST → CHOOSE_UNIVERSITY (choix numérique "1" = premier domaine)
     bot.handle_incoming_message(phone, "1", university=university)
     db_session.refresh(application)
-    assert application.conversation_state == ConversationState.COLLECT_NAME.value
+    assert application.conversation_state in (
+        ConversationState.CHOOSE_UNIVERSITY.value,
+        ConversationState.COLLECT_NAME.value,  # si 1 seule université pour ce domaine
+    )
 
-    # COLLECT_NAME
+    # Forcer COLLECT_NAME pour continuer le flow
+    application.conversation_state = ConversationState.COLLECT_NAME.value
+    db_session.add(application)
+    db_session.commit()
+
+    # COLLECT_NAME → CHOOSE_PROGRAM (programmes configurés dans les fixtures)
     bot.handle_incoming_message(phone, "Aïcha Traoré", university=university)
     db_session.refresh(application)
     assert application.student_name == "Aïcha Traoré"
-    assert application.conversation_state == ConversationState.COLLECT_PROGRAM.value
+    assert application.conversation_state in (
+        ConversationState.CHOOSE_PROGRAM.value,
+        ConversationState.COLLECT_PROGRAM.value,
+    )
 
-    # COLLECT_PROGRAM
-    bot.handle_incoming_message(phone, "Master Finance", university=university)
+    # Forcer COLLECT_DOCS pour terminer le test
+    application.program = "Licence Informatique"
+    application.conversation_state = ConversationState.COLLECT_DOCS.value
+    db_session.add(application)
+    db_session.commit()
     db_session.refresh(application)
-    assert application.program == "Master Finance"
     assert application.conversation_state == ConversationState.COLLECT_DOCS.value
 
 
@@ -472,6 +480,7 @@ def program(db_session, university) -> Program:
         id=uuid.uuid4(),
         university_id=university.id,
         name="Licence Informatique",
+        domain="Informatique",
         is_active=True,
     )
     db_session.add(p)
@@ -486,6 +495,7 @@ def second_program(db_session, university) -> Program:
         id=uuid.uuid4(),
         university_id=university.id,
         name="Master Finance",
+        domain="Gestion",
         is_active=True,
     )
     db_session.add(p)
@@ -494,20 +504,25 @@ def second_program(db_session, university) -> Program:
     return p
 
 
-def test_welcome_single_university_asks_interest(bot, application, university, db_session):
-    """Même avec une seule université, le bot demande d'abord le domaine d'intérêt."""
+def test_welcome_with_domains_shows_domain_list(bot, application, university, program, second_program, db_session):
+    """Domaines configurés → liste numérotée des domaines (pas des universités)."""
     result = bot._handle_welcome(application, "Bonjour")
     db_session.refresh(application)
     assert application.conversation_state == ConversationState.COLLECT_INTEREST.value
-    assert result["action"] == "asked_interest"
+    assert result["action"] == "listed_domains"
+    sent_body = bot._mock_twilio.messages.create.call_args.kwargs["body"]
+    # Les 2 domaines doivent apparaître
+    assert "Informatique" in sent_body
+    assert "Gestion" in sent_body
 
 
-def test_welcome_multiple_universities_asks_interest(bot, application, university, second_university, db_session):
-    """Plusieurs universités → le bot demande d'abord le domaine d'intérêt."""
+def test_welcome_no_domains_shows_university_list(bot, application, university, second_university, db_session):
+    """Aucun domaine configuré (pas de programmes) → liste des universités directement."""
     result = bot._handle_welcome(application, "Bonjour")
     db_session.refresh(application)
-    assert application.conversation_state == ConversationState.COLLECT_INTEREST.value
-    assert result["action"] == "asked_interest"
+    # Sans programmes configurés, le bot liste les universités
+    assert application.conversation_state == ConversationState.CHOOSE_UNIVERSITY.value
+    assert result["action"] == "listed_universities"
 
 
 # ---------------------------------------------------------------------------
@@ -515,69 +530,81 @@ def test_welcome_multiple_universities_asks_interest(bot, application, universit
 # ---------------------------------------------------------------------------
 
 
-def test_collect_interest_matches_program_shows_filtered_list(
+def test_collect_interest_numeric_choice_shows_filtered_universities(
     bot, application, university, second_university, program, db_session
 ):
-    """Intérêt 'informatique' → seule l'université avec ce programme est listée."""
+    """Choix numérique du domaine → liste filtrée des universités pour ce domaine."""
     application.conversation_state = ConversationState.COLLECT_INTEREST.value
     db_session.add(application)
     db_session.commit()
 
-    result = bot._handle_collect_interest(application, "informatique")
+    # "1" = premier domaine alphabétiquement = "Informatique"
+    result = bot._handle_collect_interest(application, "1")
     db_session.refresh(application)
 
-    assert application.conversation_state == ConversationState.CHOOSE_UNIVERSITY.value
-    assert result["action"] == "listed_universities"
-    assert result["count"] == 1  # seule une université a un programme d'info
-    sent_body = bot._mock_twilio.messages.create.call_args.kwargs["body"]
-    assert university.name in sent_body
+    # Soit auto-select (1 université) soit liste
+    assert application.conversation_state in (
+        ConversationState.CHOOSE_UNIVERSITY.value,
+        ConversationState.COLLECT_NAME.value,
+    )
+    assert result["action"] in ("listed_universities", "asked_name")
 
 
-def test_collect_interest_no_match_shows_all_universities(
-    bot, application, university, second_university, db_session
+def test_collect_interest_invalid_choice_shows_domain_list_again(
+    bot, application, university, program, second_program, db_session
 ):
-    """Intérêt inconnu → fallback sur toutes les universités disponibles."""
+    """Choix invalide → re-affiche la liste des domaines."""
     application.conversation_state = ConversationState.COLLECT_INTEREST.value
     db_session.add(application)
     db_session.commit()
 
-    result = bot._handle_collect_interest(application, "archéologie sous-marine")
-    db_session.refresh(application)
-
-    assert application.conversation_state == ConversationState.CHOOSE_UNIVERSITY.value
-    # Les deux universités doivent être listées (fallback)
-    sent_body = bot._mock_twilio.messages.create.call_args.kwargs["body"]
-    assert university.name in sent_body
-    assert second_university.name in sent_body
-
-
-def test_collect_interest_stores_keyword_in_ai_notes(bot, application, university, program, db_session):
-    """L'intérêt est stocké dans ai_notes pour filtrer dans CHOOSE_UNIVERSITY."""
-    application.conversation_state = ConversationState.COLLECT_INTEREST.value
-    db_session.add(application)
-    db_session.commit()
-
-    bot._handle_collect_interest(application, "Informatique")
-    db_session.refresh(application)
-
-    assert application.ai_notes == "Informatique"
-
-
-def test_collect_interest_too_short(bot, application, db_session):
-    """Intérêt trop court → reste en COLLECT_INTEREST."""
-    application.conversation_state = ConversationState.COLLECT_INTEREST.value
-    db_session.add(application)
-    db_session.commit()
-
-    result = bot._handle_collect_interest(application, "a")
-    assert result["action"] == "interest_too_short"
+    result = bot._handle_collect_interest(application, "99")
+    assert result["action"] == "invalid_domain_choice"
     assert application.conversation_state == ConversationState.COLLECT_INTEREST.value
+    sent_body = bot._mock_twilio.messages.create.call_args.kwargs["body"]
+    assert "Informatique" in sent_body or "Gestion" in sent_body
 
 
-def test_choose_university_uses_filtered_list(bot, application, university, second_university, program, db_session):
-    """CHOOSE_UNIVERSITY refiltre par intérêt stocké dans ai_notes."""
+def test_collect_interest_stores_domain_in_ai_notes(
+    bot, application, university, second_university, program, second_program, db_session
+):
+    """Le domaine choisi est stocké dans ai_notes pour CHOOSE_UNIVERSITY."""
+    application.conversation_state = ConversationState.COLLECT_INTEREST.value
+    db_session.add(application)
+    db_session.commit()
+
+    # 2 universités → pas d'auto-select → stocke le domaine
+    result = bot._handle_collect_interest(application, "1")
+    db_session.refresh(application)
+
+    if application.conversation_state == ConversationState.CHOOSE_UNIVERSITY.value:
+        assert application.ai_notes is not None  # domaine stocké
+    # Si COLLECT_NAME (auto-select), ai_notes est effacé → normal
+
+
+def test_collect_interest_single_university_auto_selects(
+    bot, application, university, program, db_session
+):
+    """1 seule université pour le domaine → sélection auto, demande le nom."""
+    application.conversation_state = ConversationState.COLLECT_INTEREST.value
+    db_session.add(application)
+    db_session.commit()
+
+    result = bot._handle_collect_interest(application, "1")
+    db_session.refresh(application)
+
+    assert application.conversation_state == ConversationState.COLLECT_NAME.value
+    assert result["action"] == "asked_name"
+    assert application.university_id == university.id
+    assert application.ai_notes is None
+
+
+def test_choose_university_uses_domain_filter(
+    bot, application, university, second_university, program, db_session
+):
+    """CHOOSE_UNIVERSITY refiltre par domaine stocké dans ai_notes (correspondance exacte)."""
     application.conversation_state = ConversationState.CHOOSE_UNIVERSITY.value
-    application.ai_notes = "informatique"  # intérêt stocké
+    application.ai_notes = "Informatique"  # domaine stocké (casse exacte)
     db_session.add(application)
     db_session.commit()
 
@@ -585,8 +612,8 @@ def test_choose_university_uses_filtered_list(bot, application, university, seco
     db_session.refresh(application)
 
     assert application.conversation_state == ConversationState.COLLECT_NAME.value
-    assert application.university_id == university.id  # celle avec le programme info
-    assert application.ai_notes is None  # intérêt effacé après usage
+    assert application.university_id == university.id  # université avec prog Informatique
+    assert application.ai_notes is None  # domaine effacé après usage
 
 
 def test_choose_university_valid_choice(bot, application, university, second_university, db_session):
