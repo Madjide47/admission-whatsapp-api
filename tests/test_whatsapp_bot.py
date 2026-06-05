@@ -224,6 +224,60 @@ def test_notify_decision_rejected(bot):
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Signature Twilio (_verify_twilio_signature)
+# ---------------------------------------------------------------------------
+
+
+def test_verify_twilio_signature_valid():
+    """Signature HMAC-SHA1 correcte → retourne True."""
+    import base64
+    import hashlib
+    import hmac as hmac_mod
+
+    from app.api.whatsapp.twilio_webhook import _verify_twilio_signature
+    from unittest.mock import MagicMock
+
+    auth_token = "testtoken"
+    url = "https://example.com/whatsapp/incoming"
+    params = {"From": "whatsapp:+228", "Body": "Bonjour"}
+
+    sorted_pairs = "".join(f"{k}{v}" for k, v in sorted(params.items()))
+    data = (url + sorted_pairs).encode("utf-8")
+    sig = base64.b64encode(
+        hmac_mod.new(auth_token.encode(), data, hashlib.sha1).digest()
+    ).decode()
+
+    mock_request = MagicMock()
+    mock_request.headers = {"X-Twilio-Signature": sig}
+    mock_request.url = url
+
+    assert _verify_twilio_signature(mock_request, params) is True
+
+
+def test_verify_twilio_signature_invalid():
+    """Mauvaise signature → retourne False."""
+    from app.api.whatsapp.twilio_webhook import _verify_twilio_signature
+    from unittest.mock import MagicMock
+
+    mock_request = MagicMock()
+    mock_request.headers = {"X-Twilio-Signature": "invalide=="}
+    mock_request.url = "https://example.com/whatsapp/incoming"
+
+    assert _verify_twilio_signature(mock_request, {"From": "whatsapp:+228"}) is False
+
+
+def test_verify_twilio_signature_missing_header():
+    """Header absent → retourne False."""
+    from app.api.whatsapp.twilio_webhook import _verify_twilio_signature
+    from unittest.mock import MagicMock
+
+    mock_request = MagicMock()
+    mock_request.headers = {}
+
+    assert _verify_twilio_signature(mock_request, {}) is False
+
+
 def test_twilio_endpoint_returns_twiml(client, db_session, monkeypatch):
     """POST /whatsapp/incoming retourne un TwiML vide (200)."""
     monkeypatch.setattr(

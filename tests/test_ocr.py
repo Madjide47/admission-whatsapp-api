@@ -56,3 +56,53 @@ def test_extract_empty_on_corrupted_file(ocr_service, monkeypatch):
     """Un fichier corrompu ne doit pas lever — retour string vide."""
     text = ocr_service.extract_text(b"pas une image", mime_type="image/png")
     assert text == ""
+
+
+def test_extract_image_converts_palette_to_rgb(ocr_service, monkeypatch):
+    """Image en mode palette (P) est convertie en RGB avant l'OCR."""
+    monkeypatch.setattr(
+        "app.services.ocr_service.pytesseract.image_to_string",
+        lambda img, lang: "texte ok",
+    )
+    buf = io.BytesIO()
+    Image.new("P", (100, 40)).save(buf, format="PNG")
+    text = ocr_service.extract_text(buf.getvalue(), mime_type="image/png")
+    assert text == "texte ok"
+
+
+def test_extract_pdf_conversion_error_returns_empty(ocr_service, monkeypatch):
+    """Erreur lors de la conversion PDF→images → retourne '' sans crash."""
+    monkeypatch.setattr(
+        "app.services.ocr_service.convert_from_bytes",
+        lambda *a, **kw: (_ for _ in ()).throw(Exception("Poppler absent")),
+    )
+    text = ocr_service.extract_text(b"%PDF-1.4 fake", mime_type="application/pdf")
+    assert text == ""
+
+
+def test_extract_autodetects_pdf_by_magic_bytes(ocr_service, monkeypatch):
+    """Les octets %PDF déclenchent le chemin PDF même sans mime_type."""
+    captured = {}
+
+    def fake_convert(content, **kwargs):
+        captured["called"] = True
+        return [Image.new("RGB", (50, 50), color="white")]
+
+    monkeypatch.setattr("app.services.ocr_service.convert_from_bytes", fake_convert)
+    monkeypatch.setattr(
+        "app.services.ocr_service.pytesseract.image_to_string",
+        lambda img, lang: "contenu",
+    )
+    ocr_service.extract_text(b"%PDF-1.4 content", mime_type=None)
+    assert captured.get("called") is True
+
+
+def test_get_ocr_service_singleton():
+    """get_ocr_service retourne toujours la même instance."""
+    import importlib
+    import app.services.ocr_service as mod
+
+    mod._ocr_service = None  # reset singleton
+    s1 = mod.get_ocr_service()
+    s2 = mod.get_ocr_service()
+    assert s1 is s2
