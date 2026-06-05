@@ -804,8 +804,8 @@ accept_content = ["json"]
 
 ### Phase 3 — Intégration
 - [x] Collection Postman v2 (`docs/postman/`)
-- [ ] Valider import Boussole.in (bloqué : script Dev 1)
-- [ ] Finaliser INTEGRATION.md quand endpoints admin livrés
+- [x] Échantillon `data/boussole_sample.json` + procédure `docs/IMPORT.md`
+- [x] `INTEGRATION.md` mis à jour (endpoints admin opérationnels)
 
 ### Phase 4 — Finalisation
 - [ ] Mettre à jour diagrammes séquences / cas d'utilisation v2

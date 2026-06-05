@@ -29,7 +29,7 @@ X-API-Secret: sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 | Environnement | Méthode |
 |---------------|---------|
-| Dev / test | `POST /api/v1/admin/seed-university` *(Dev 1 — à venir)* |
+| Dev / test | `POST /api/v1/admin/seed-university` |
 | Dev / test | `python scripts/create_university.py --name "..." --email "..."` |
 | Production | Processus d'onboarding manuel |
 

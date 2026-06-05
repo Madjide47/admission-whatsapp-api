@@ -45,7 +45,7 @@ def application(db_session, university) -> Application:
         student_phone="+22890333333",
         student_name="Kofi Mensah",
         program="Licence Informatique",
-        status=ApplicationStatus.COLLECTING,
+        status=ApplicationStatus.COLLECTING_DOCUMENTS,
         conversation_state="COLLECT_DOCS",
     )
     db_session.add(app)
@@ -301,7 +301,7 @@ def test_completion_no_whatsapp_when_incomplete(db_session, application, monkeyp
         from app.workers.ai_tasks import check_application_completion_task
         status = check_application_completion_task.run(str(application.id))
 
-    assert status == ApplicationStatus.COLLECTING.value
+    assert status == ApplicationStatus.COLLECTING_DOCUMENTS.value
     mock_send.assert_not_called()
 
 

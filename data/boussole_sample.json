@@ -1,0 +1,42 @@
+{
+  "universities": [
+    {
+      "name": "Université de Lomé",
+      "email": "contact@univ-lome-demo.tg",
+      "programs": [
+        {
+          "name": "Licence Informatique",
+          "description": "Formation en développement logiciel et réseaux"
+        },
+        {
+          "name": "Licence Droit",
+          "description": "Formation en droit public et privé"
+        }
+      ]
+    },
+    {
+      "name": "Université de Kara",
+      "email": "contact@univ-kara-demo.tg",
+      "programs": [
+        {
+          "name": "Licence Gestion",
+          "description": "Management et comptabilité"
+        },
+        {
+          "name": "Master Économie",
+          "description": "Économie appliquée et politiques publiques"
+        }
+      ]
+    },
+    {
+      "name": "École Supérieure de Technologie",
+      "email": "admission@est-demo.tg",
+      "programs": [
+        {
+          "name": "BTS Réseaux et Télécoms",
+          "description": "Formation technique en réseaux informatiques"
+        }
+      ]
+    }
+  ]
+}

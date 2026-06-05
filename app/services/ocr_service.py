@@ -2,17 +2,9 @@
 import io
 import logging
 
-import pytesseract
-from PIL import Image
-from pdf2image import convert_from_bytes
-
 from app.config import settings
 
 logger = logging.getLogger(__name__)
-
-# Configurer le chemin de Tesseract si fourni explicitement
-if settings.TESSERACT_CMD:
-    pytesseract.pytesseract.tesseract_cmd = settings.TESSERACT_CMD
 
 
 class OCRService:
@@ -22,38 +14,38 @@ class OCRService:
         self.lang = lang or settings.TESSERACT_LANG
 
     def extract_text(self, content: bytes, mime_type: str | None = None) -> str:
-        """Extrait le texte d'un fichier en mémoire.
-
-        Détection automatique du type via mime_type (préféré) ou les
-        premiers octets du fichier.
-        """
+        """Extrait le texte d'un fichier en mémoire."""
         mime = (mime_type or "").lower()
-
         if mime == "application/pdf" or content[:4] == b"%PDF":
             return self._extract_from_pdf(content)
-
-        # Tout le reste est traité comme une image
         return self._extract_from_image(content)
 
     def _extract_from_image(self, content: bytes) -> str:
         """OCR sur une image (PNG, JPEG, etc.)."""
         try:
+            import pytesseract
+            from PIL import Image
+
+            if settings.TESSERACT_CMD:
+                pytesseract.pytesseract.tesseract_cmd = settings.TESSERACT_CMD
+
             image = Image.open(io.BytesIO(content))
-            # Conversion en RGB pour éviter les warnings sur les PNG palette
             if image.mode not in ("RGB", "L"):
                 image = image.convert("RGB")
-            text = pytesseract.image_to_string(image, lang=self.lang)
-            return text.strip()
+            return pytesseract.image_to_string(image, lang=self.lang).strip()
         except Exception as e:
             logger.exception("Erreur OCR sur image: %s", e)
             return ""
 
     def _extract_from_pdf(self, content: bytes) -> str:
-        """OCR sur un PDF — chaque page est convertie en image puis OCR.
-
-        On limite à 20 pages pour éviter les abus.
-        """
+        """OCR sur un PDF — chaque page convertie en image puis OCR."""
         try:
+            import pytesseract
+            from pdf2image import convert_from_bytes
+
+            if settings.TESSERACT_CMD:
+                pytesseract.pytesseract.tesseract_cmd = settings.TESSERACT_CMD
+
             pages = convert_from_bytes(content, dpi=200, first_page=1, last_page=20)
         except Exception as e:
             logger.exception("Erreur de conversion PDF→images: %s", e)
@@ -67,7 +59,6 @@ class OCRService:
                     chunks.append(f"--- Page {i} ---\n{txt.strip()}")
             except Exception as e:
                 logger.warning("Erreur OCR page %d: %s", i, e)
-
         return "\n\n".join(chunks)
 
 

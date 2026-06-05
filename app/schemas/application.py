@@ -73,6 +73,7 @@ class ApplicationRead(ApplicationBase):
 
     id: uuid.UUID
     university_id: uuid.UUID
+    program_id: uuid.UUID | None = None
     status: ApplicationStatus
     validation_score: float | None = None
     ai_notes: str | None = None

@@ -102,6 +102,10 @@ class Settings(BaseSettings):
     SWAGGER_DEMO_API_KEY: str = ""
     SWAGGER_DEMO_API_SECRET: str = ""
 
+    # ---------------- Interface Admin ----------------
+    ADMIN_USERNAME: str = "admin"
+    ADMIN_PASSWORD: str = ""  # obligatoire en production
+
     # ---------------- Calculés / dérivés ----------------
     @property
     def is_production(self) -> bool:

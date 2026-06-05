@@ -14,8 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.models.application import Application, ApplicationStatus
 from app.models.document import Document, DocumentType
-from app.models.program import Program
-from app.models.required_document import RequiredDocument
+from app.models.program import AdmissionForm, Program, RequiredDocument
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +100,7 @@ class ApplicationValidator:
         if is_complete:
             application.status = ApplicationStatus.VALIDATED
         else:
-            application.status = ApplicationStatus.COLLECTING
+            application.status = ApplicationStatus.COLLECTING_DOCUMENTS
 
         self.db.add(application)
         self.db.commit()
@@ -151,11 +150,23 @@ class ApplicationValidator:
             if program is None:
                 return _REQUIRED_ORDERED[:]
 
+            form = self.db.execute(
+                select(AdmissionForm)
+                .where(
+                    AdmissionForm.program_id == program.id,
+                    AdmissionForm.is_published.is_(True),
+                )
+                .order_by(AdmissionForm.published_at.desc())
+            ).scalar_one_or_none()
+
+            if form is None:
+                return _REQUIRED_ORDERED[:]
+
             required = list(
                 self.db.execute(
                     select(RequiredDocument)
                     .where(
-                        RequiredDocument.program_id == program.id,
+                        RequiredDocument.form_id == form.id,
                         RequiredDocument.is_required.is_(True),
                     )
                     .order_by(RequiredDocument.order, RequiredDocument.document_type)
@@ -165,7 +176,13 @@ class ApplicationValidator:
             if not required:
                 return _REQUIRED_ORDERED[:]
 
-            return [rd.document_type for rd in required]
+            result: list[DocumentType] = []
+            for rd in required:
+                try:
+                    result.append(DocumentType(rd.document_type))
+                except ValueError:
+                    logger.warning("Type document inconnu en base : %s", rd.document_type)
+            return result or _REQUIRED_ORDERED[:]
 
         except Exception:
             logger.warning(

@@ -42,16 +42,17 @@ Pré-remplir la base avec les universités et programmes depuis le fichier JSON 
 
 ---
 
-## 3. Procédure d'import (à valider quand Dev 1 livre)
+## 3. Procédure d'import
 
 ```bash
-# Copier l'échantillon
-cp data/boussole_sample.json data/boussole.json
+# Dry-run (simulation sans écriture)
+python scripts/import_boussole.py --file data/boussole_sample.json --dry-run
 
-# Lancer l'import
-make import-boussole
-# ou :
-docker compose exec api python scripts/import_boussole.py --file data/boussole.json
+# Import réel
+python scripts/import_boussole.py --file data/boussole_sample.json
+
+# Via Docker
+docker compose exec api python scripts/import_boussole.py --file data/boussole_sample.json
 ```
 
 **Sortie attendue :**

@@ -6,8 +6,7 @@ import pytest
 
 from app.models.application import Application, ApplicationStatus
 from app.models.document import Document, DocumentType
-from app.models.program import Program
-from app.models.required_document import RequiredDocument
+from app.models.program import AdmissionForm, Program, RequiredDocument
 from app.models.university import University
 from app.services.validator import ApplicationValidator, REQUIRED_DOCUMENT_TYPES
 
@@ -39,7 +38,7 @@ def base_application(db_session, university) -> Application:
         student_phone="+22890111111",
         student_name="Aminata Diallo",
         program="Licence Droit",
-        status=ApplicationStatus.COLLECTING,
+        status=ApplicationStatus.COLLECTING_FIELDS,
         conversation_state="COLLECT_DOCS",
     )
     db_session.add(app)
@@ -150,7 +149,7 @@ def test_apply_validation_stays_collecting_if_incomplete(db_session, base_applic
     # Aucun document ajouté
     validator = ApplicationValidator(db_session)
     result = validator.apply_validation(base_application)
-    assert result.status == ApplicationStatus.COLLECTING
+    assert result.status == ApplicationStatus.COLLECTING_DOCUMENTS
     assert "Problèmes" in result.ai_notes
 
 
@@ -208,6 +207,14 @@ def program_with_requirements(db_session, university) -> tuple[Program, list[Req
     db_session.add(program)
     db_session.flush()
 
+    form = AdmissionForm(
+        id=uuid.uuid4(),
+        program_id=program.id,
+        is_published=True,
+    )
+    db_session.add(form)
+    db_session.flush()
+
     req_docs = []
     for i, (doc_type, label) in enumerate([
         (DocumentType.DIPLOME, "Diplôme du bac"),
@@ -215,8 +222,8 @@ def program_with_requirements(db_session, university) -> tuple[Program, list[Req
     ]):
         rd = RequiredDocument(
             id=uuid.uuid4(),
-            program_id=program.id,
-            document_type=doc_type,
+            form_id=form.id,
+            document_type=doc_type.value,
             is_required=True,
             label=label,
             order=i,
@@ -279,7 +286,7 @@ def test_dynamic_validator_fallback_when_no_program_in_db(db_session, university
         student_phone="+22890999999",
         student_name="Test Fallback",
         program="Programme Inexistant en Base",
-        status=ApplicationStatus.COLLECTING,
+        status=ApplicationStatus.COLLECTING_DOCUMENTS,
         conversation_state="COLLECT_DOCS",
     )
     db_session.add(app)
@@ -312,7 +319,7 @@ def test_dynamic_validator_fallback_when_no_required_docs_configured(db_session,
         student_phone="+22890888888",
         student_name="Test Vide",
         program="Master Vide",
-        status=ApplicationStatus.COLLECTING,
+        status=ApplicationStatus.COLLECTING_DOCUMENTS,
         conversation_state="COLLECT_DOCS",
     )
     db_session.add(app)
