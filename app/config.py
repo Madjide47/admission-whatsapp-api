@@ -59,7 +59,7 @@ class Settings(BaseSettings):
 
     # ---------------- Google Gemini Flash ----------------
     GOOGLE_AI_API_KEY: str = ""
-    GOOGLE_AI_MODEL: str = "gemini-2.0-flash"
+    GOOGLE_AI_MODEL: str = "gemini-2.5-flash"
 
     # ---------------- Google Cloud Storage ----------------
     GCS_BUCKET_NAME: str
