@@ -1,0 +1,1661 @@
+{
+  "universities": [
+    {
+      "name": "Institut des Hautes Technologies d'Informatique et de Bureautique (HTIB) Atlantis",
+      "email": "contact@logoti.net",
+      "programs": [
+        {
+          "name": "Licence Professionnelle d’Informatique",
+          "domain": "Informatique",
+          "description": null
+        },
+        {
+          "name": "Licence Gestion / Comptabilité",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "DUT (Diplôme Universitaire de Technologie)",
+          "domain": null,
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Hôtel École Avenida",
+      "email": "avenida@import.boussole.tg",
+      "programs": [
+        {
+          "name": "BTS Hôtellerie",
+          "domain": "Tourisme",
+          "description": null
+        },
+        {
+          "name": "BTS Restauration",
+          "domain": "Tourisme",
+          "description": null
+        },
+        {
+          "name": "BTS Cuisine Professionnelle",
+          "domain": "Tourisme",
+          "description": null
+        },
+        {
+          "name": "Licence professionnelle Tourisme et Loisirs",
+          "domain": "Tourisme",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Centre de Formation Bancaire du Togo (CFBT)",
+      "email": "cfbt@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Formation en Finance",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Formation en Gestion",
+          "domain": "Gestion",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Centre International de Formation Professionnelle (CIFOP)",
+      "email": "cifop@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Développement d’applications",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Gestion d’Entreprises",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Transport et Logistique",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Marketing et Communication",
+          "domain": "Communication",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut Polytechnique Défitech",
+      "email": "defitech@defitech.tg",
+      "programs": [
+        {
+          "name": "BTS (Brevet de Technicien Supérieur)",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Secrétariat de direction",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Assistant de gestion PME-PMI",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Communication des entreprises",
+          "domain": "Communication",
+          "description": null
+        },
+        {
+          "name": "Commerce international",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Action commerciale et force de vente",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Finance banque",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Comptabilité et gestion des entreprises",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Télécommunications et réseaux",
+          "domain": "Communication",
+          "description": null
+        },
+        {
+          "name": "Administrateur de réseaux locaux d'entreprise",
+          "domain": "Informatique",
+          "description": null
+        },
+        {
+          "name": "Développeur d'applications",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Génie Civil",
+          "domain": "Génie",
+          "description": null
+        },
+        {
+          "name": "Licence Professionnelle",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Gestion commerciale et marketing",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Comptabilité et finance",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Banque, finance, assurances",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Génie logiciel",
+          "domain": "Génie",
+          "description": null
+        },
+        {
+          "name": "Énergie renouvelable",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Master Professionnel",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Management des ressources humaines",
+          "domain": "Ressources Humaines",
+          "description": null
+        },
+        {
+          "name": "Audit et contrôle de gestion",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Communication et relations publiques",
+          "domain": "Communication",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut Supérieur Don Bosco (ISDB)",
+      "email": "prefecturedesetudes@ispshdblome.com",
+      "programs": [
+        {
+          "name": "Licence en Philosophie",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Licence Sciences de l’Éducation",
+          "domain": "Éducation",
+          "description": null
+        },
+        {
+          "name": "Licence Sciences et Techniques de la Communication (STC)",
+          "domain": "Communication",
+          "description": null
+        },
+        {
+          "name": "Master Recherche Philosophie",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Master professionnel Sciences de l’Éducation",
+          "domain": "Éducation",
+          "description": null
+        },
+        {
+          "name": "Master Communication et Marketing Territorial",
+          "domain": "Communication",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Ecole des Cadres de Lomé",
+      "email": "contact@ecoledescadrestogo.com",
+      "programs": [
+        {
+          "name": "BTS Assistant de Gestion PME-PMI",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "BTS Action Commerciale et Force de Vente",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Licence Professionnelle Insurance, Banque, Finance",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Licence Communication & Multimédia",
+          "domain": "Communication",
+          "description": null
+        },
+        {
+          "name": "Licence Commerce International",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Master Management et Marketing à l'international",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Master Gestion Logistique et Transport",
+          "domain": "Gestion",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "École Normale Supérieure d’Atakpamé (ENS)",
+      "email": "ens@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Licence Professionnelle d’Enseignement (LPE)",
+          "domain": "Éducation",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "École Supérieure d'Audit et de Management (ESAM)",
+      "email": "esam@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Bachelor en Audit et Contrôle de Gestion",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Master Comptabilité Contrôle Audit (CCA)",
+          "domain": "Comptabilité",
+          "description": null
+        },
+        {
+          "name": "Master Management des Organisations",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "MBA Audit et Management",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Expertise Comptable DEC",
+          "domain": "Comptabilité",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "École Supérieure des Affaires (ESA-Togo)",
+      "email": "esatg@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Comptabilité et Gestion des Entreprises",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Finance-Banque",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Assistant de Gestion PME/PMI",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Assurance",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Secrétariat de Direction",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Secrétariat commercial bilingue",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Commerce International",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Transport Logistique et Transit",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Communication des Entreprises",
+          "domain": "Communication",
+          "description": null
+        },
+        {
+          "name": "Génie Civil",
+          "domain": "Génie",
+          "description": null
+        },
+        {
+          "name": "Electrotechnique",
+          "domain": "Génie",
+          "description": null
+        },
+        {
+          "name": "Informatique Industrielle",
+          "domain": "Informatique",
+          "description": null
+        },
+        {
+          "name": "Banque/Assurance",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Marketing-Communication",
+          "domain": "Communication",
+          "description": null
+        },
+        {
+          "name": "Gestion Commerciale",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Journalisme",
+          "domain": "Communication",
+          "description": null
+        },
+        {
+          "name": "Sciences Techniques Comptables et Financières",
+          "domain": "Comptabilité",
+          "description": null
+        },
+        {
+          "name": "Informatique de Gestion",
+          "domain": "Informatique",
+          "description": null
+        },
+        {
+          "name": "Génie Logiciel",
+          "domain": "Génie",
+          "description": null
+        },
+        {
+          "name": "Diplomatie Protocole et Relations Publiques",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Management",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Audit et Contrôle de Gestion",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Gestion de Projets",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "DESCOGEF",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Qualité Sécurité Environnement",
+          "domain": "Agronomie",
+          "description": null
+        },
+        {
+          "name": "Ressources Humaines",
+          "domain": "Ressources Humaines",
+          "description": null
+        },
+        {
+          "name": "Diplomatie/Relations Internationales",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Marketing Digital",
+          "domain": "Informatique",
+          "description": null
+        },
+        {
+          "name": "Sciences de Gestion",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Administration",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Commerce",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Développement durable",
+          "domain": null,
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "École Supérieure de Commerce et d'Économie Numérique (ESCEN)",
+      "email": "escen@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Formation en Communication",
+          "domain": "Communication",
+          "description": null
+        },
+        {
+          "name": "Formation en Gestion",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Formation en Finance",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Formation en Informatique",
+          "domain": "Informatique",
+          "description": null
+        },
+        {
+          "name": "Formation en Génie",
+          "domain": "Génie",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "École Supérieure des Études Cinématographiques (ESEC)",
+      "email": "eseclome@gmail.com",
+      "programs": [
+        {
+          "name": "Assistant ingénieur de son",
+          "domain": "Génie",
+          "description": null
+        },
+        {
+          "name": "Assistant monteur",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Assistant opérateur de prise de vue",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Assistant production",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Assistant réalisateur",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Ingénierie communication multimédia",
+          "domain": "Génie",
+          "description": null
+        },
+        {
+          "name": "Ingénierie de son",
+          "domain": "Génie",
+          "description": null
+        },
+        {
+          "name": "Ingénierie montage",
+          "domain": "Génie",
+          "description": null
+        },
+        {
+          "name": "Ingénierie production",
+          "domain": "Génie",
+          "description": null
+        },
+        {
+          "name": "Journaliste reporter d'image",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Technicien audiovisuel",
+          "domain": null,
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "École Supérieure de Gestion d'Informatique et des Sciences (ESGIS)",
+      "email": "esgis.togo@esgis.org",
+      "programs": [
+        {
+          "name": "Formation en Santé",
+          "domain": "Santé",
+          "description": null
+        },
+        {
+          "name": "Formation en Droit",
+          "domain": "Droit",
+          "description": null
+        },
+        {
+          "name": "Formation en Gestion",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Formation en Finance",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Formation en Informatique",
+          "domain": "Informatique",
+          "description": null
+        },
+        {
+          "name": "Formation en Communication",
+          "domain": "Communication",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Ecole Supérieure de Management des Affaires (ESMA-Togo)",
+      "email": "esma@import.boussole.tg",
+      "programs": [
+        {
+          "name": "BTS/DTS/DUT (BAC+2)",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Licence (BAC+3)",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Master (BAC+5)",
+          "domain": null,
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "École Supérieure des Ponts et Chaussées (ESPC)",
+      "email": "espc@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Licence en Génie Civil",
+          "domain": "Génie",
+          "description": null
+        },
+        {
+          "name": "Master Ingénieur de Conception (Génie Civil, Génie Mécanique, Génie Hydraulique, Génie Électrique)",
+          "domain": "Génie",
+          "description": null
+        },
+        {
+          "name": "Masters spécialisés (Bac+5, post-ingénieur)",
+          "domain": "Génie",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "École Supérieure des Techniques Agricoles, Biologiques et Alimentaires d'Atakpamé (ESTABAT)",
+      "email": "estabat@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Licence professionnelle en Agronomie",
+          "domain": "Agronomie",
+          "description": null
+        },
+        {
+          "name": "Licence professionnelle en Agroalimentaire",
+          "domain": "Agronomie",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "École Supérieure de Technologie du Cinéma et de l’Audiovisuel (ESTECA)",
+      "email": "esteca@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Licence professionnelle Cinéma & Audiovisuel",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Formation technique en audiovisuel",
+          "domain": null,
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Ecole Supérieure des Techniques et Arts de la Communication (ESTAC)",
+      "email": "estactogo@gmail.com",
+      "programs": [
+        {
+          "name": "Formation en Journalisme",
+          "domain": "Communication",
+          "description": null
+        },
+        {
+          "name": "Formation en Communication",
+          "domain": "Communication",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Faculté de Théologie des Assemblées de Dieu (FATAD)",
+      "email": "archiviste@fatad.org",
+      "programs": [
+        {
+          "name": "Formation en Santé",
+          "domain": "Santé",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "École Supérieure de Formation Professionnelle FIMAC (ESFP-FIMAC)",
+      "email": "fimac@fimactogo.net",
+      "programs": [
+        {
+          "name": "Assistant de gestion PME/PMI",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Secrétariat de direction",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Archiviste documentaliste",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Transport logistique et transit",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Comptabilité et gestion des entreprises",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Action commerciale et force de vente",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Finance - banque",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Développement d'applications",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Maintenance informatique et réseaux",
+          "domain": "Informatique",
+          "description": null
+        },
+        {
+          "name": "Electrotechnique",
+          "domain": "Génie",
+          "description": null
+        },
+        {
+          "name": "Admin. et réseaux locaux d’entreprises",
+          "domain": "Informatique",
+          "description": null
+        },
+        {
+          "name": "Gestion des collectivités locales",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Assurance",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Hôtellerie",
+          "domain": "Tourisme",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "FORMATEC (Institut des Sciences Technologiques, Économiques et Administratives)",
+      "email": "formatec03@yahoo.fr",
+      "programs": [
+        {
+          "name": "Licence professionnelle",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Master professionnel",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Brevet de Technicien Supérieur",
+          "domain": null,
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut des Hautes Études de Management de Lomé (HETML)",
+      "email": "hetml@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Licence en Management des Organisations",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Licence en Administration des Affaires",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Master en Management / Administration",
+          "domain": "Gestion",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut Africain de Développement Sanitaire et Social (IADSS)",
+      "email": "iadss@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Licence professionnelle en Sciences de la Santé (Soins Infirmiers, Soins Obstétricaux et Néonataux)",
+          "domain": "Santé",
+          "description": null
+        },
+        {
+          "name": "Licence professionnelle en Radiologie et Imagerie médicale",
+          "domain": "Santé",
+          "description": null
+        },
+        {
+          "name": "Licence professionnelle en Analyses biomédicales",
+          "domain": "Santé",
+          "description": null
+        },
+        {
+          "name": "Licence professionnelle en Gestion de bases de données en santé, Épidémiologie Nutritionnelle, Éducation spécialisée",
+          "domain": "Santé",
+          "description": null
+        },
+        {
+          "name": "Licence en Santé Animale et Productions animales",
+          "domain": "Santé",
+          "description": null
+        },
+        {
+          "name": "Master professionnel en Santé Publique",
+          "domain": "Santé",
+          "description": null
+        },
+        {
+          "name": "Master professionnel en Sciences Médico-chirurgicales",
+          "domain": null,
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "IAEC",
+      "email": "iaec@import.boussole.tg",
+      "programs": []
+    },
+    {
+      "name": "Institut Africain d'Informatique (IAI-Togo)",
+      "email": "iai@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Formation en Informatique",
+          "domain": "Informatique",
+          "description": null
+        },
+        {
+          "name": "Formation en Finance",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Formation en Génie",
+          "domain": "Génie",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut de Formation et de Recherche pour le Développement Durable (IFORDD)",
+      "email": "contact@ifordd.org",
+      "programs": [
+        {
+          "name": "BTS Gestion de l'Environnement",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Licence en Droit Public",
+          "domain": "Droit",
+          "description": null
+        },
+        {
+          "name": "Licence en Administration et Gestion Fiscale",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Licence en Ingénierie du Développement Durable",
+          "domain": "Génie",
+          "description": null
+        },
+        {
+          "name": "Master en Décentralisation et Gouvernance Locale",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Master Passation & Gestion des Marchés Publics",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Master Gouvernance et Management des Organisations",
+          "domain": "Gestion",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut de Formation Technique et Supérieure (IFTS)",
+      "email": "ifts@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Licence en Génie Civil",
+          "domain": "Génie",
+          "description": null
+        },
+        {
+          "name": "Licence en Génie Électrique",
+          "domain": "Génie",
+          "description": null
+        },
+        {
+          "name": "Licence en Génie Mécanique",
+          "domain": "Génie",
+          "description": null
+        },
+        {
+          "name": "Master en Ingénierie",
+          "domain": "Génie",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut des Mathématiques et Sciences et Technologies (IMaST)",
+      "email": "imastagoe@gmail.com",
+      "programs": [
+        {
+          "name": "Licences professionnelles",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Master professionnel en enseignement des mathématiques",
+          "domain": "Éducation",
+          "description": null
+        },
+        {
+          "name": "Master professionnel en enseignement des sciences physiques",
+          "domain": "Éducation",
+          "description": null
+        },
+        {
+          "name": "Année préparatoire en mathématiques et sciences physiques",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Brevet de Technicien Supérieur",
+          "domain": null,
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut Supérieur Privé de Management du Togo (IPM-Togo)",
+      "email": "contact@ipmtogo.com",
+      "programs": [
+        {
+          "name": "Licence en Finance Comptabilité",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Licence en Comptabilité Contrôle Audit",
+          "domain": "Comptabilité",
+          "description": null
+        },
+        {
+          "name": "Licence en Gestion des Ressources Humaines",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Licence en Management des Organisations",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Licence en Marketing et Communication",
+          "domain": "Communication",
+          "description": null
+        },
+        {
+          "name": "Licence en Commerce International et Logistique",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Master en Finance Comptabilité",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Master en Comptabilité Contrôle Audit",
+          "domain": "Comptabilité",
+          "description": null
+        },
+        {
+          "name": "Master en Gestion des Ressources Humaines",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Master en Marketing et Communication",
+          "domain": "Communication",
+          "description": null
+        },
+        {
+          "name": "Master en Management des Organisations",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Master en Gestion des Projets",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Master en Commerce International et Logistique",
+          "domain": "Gestion",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut Polytechnique des Bâtiments et des Travaux Publics (IPBTP)",
+      "email": "ipbtp@ipbtp.com",
+      "programs": [
+        {
+          "name": "Formation en Génie",
+          "domain": "Génie",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "IPNet Institute of Technology",
+      "email": "ipnet@ipnetinstitute.com",
+      "programs": [
+        {
+          "name": "Licence Réseaux, Systèmes & Sécurité",
+          "domain": "Informatique",
+          "description": null
+        },
+        {
+          "name": "Licence Génie Logiciel",
+          "domain": "Génie",
+          "description": null
+        },
+        {
+          "name": "Licence Sciences des Données",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Licences cours du soir (pour BTS, DUT, ou Licence non-informatique)",
+          "domain": "Informatique",
+          "description": null
+        },
+        {
+          "name": "Master Cybersécurité",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "MBA Gouvernance, Audit et Sécurité des Systèmes d’Information",
+          "domain": "Informatique",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut de Recherche et de Formation pour le Développement Local (IRFODEL)",
+      "email": "contact@irfodel.com / secretariatirfodel@yahoo.fr",
+      "programs": [
+        {
+          "name": "Formation en Gestion",
+          "domain": "Gestion",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut Supérieur Agata Carelli (ISAC)",
+      "email": "isac@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Formation en Gestion",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Formation en Santé",
+          "domain": "Santé",
+          "description": null
+        },
+        {
+          "name": "Formation en Communication",
+          "domain": "Communication",
+          "description": null
+        },
+        {
+          "name": "Formation en Ressources Humaines",
+          "domain": "Ressources Humaines",
+          "description": null
+        },
+        {
+          "name": "Formation en Informatique",
+          "domain": "Informatique",
+          "description": null
+        },
+        {
+          "name": "Formation en Génie",
+          "domain": "Génie",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut Supérieur d'Administration des Sciences Economiques et de Gestion de Santé (ISAGES)",
+      "email": "contact@isagestogo.com",
+      "programs": [
+        {
+          "name": "Formation en Communication",
+          "domain": "Communication",
+          "description": null
+        },
+        {
+          "name": "Formation en Gestion",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Formation en Santé",
+          "domain": "Santé",
+          "description": null
+        },
+        {
+          "name": "Formation en Génie",
+          "domain": "Génie",
+          "description": null
+        },
+        {
+          "name": "Formation en Ressources Humaines",
+          "domain": "Ressources Humaines",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut Supérieur de Droit et d’Interprétariat (ISDI)",
+      "email": "isditogo@gmail.com",
+      "programs": [
+        {
+          "name": "Licence Fondamentale en Sciences Juridiques, Politiques et de l’Administration - Droit privé",
+          "domain": "Droit",
+          "description": null
+        },
+        {
+          "name": "Licence Fondamentale en Sciences Juridiques, Politiques et de l’Administration - Droit public",
+          "domain": "Droit",
+          "description": null
+        },
+        {
+          "name": "Licence professionnelle Interprète-Traducteur",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Master professionnel Droit des affaires et fiscalité",
+          "domain": "Droit",
+          "description": null
+        },
+        {
+          "name": "Master Sciences Politiques",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Master Droit de l’Entreprise",
+          "domain": "Droit",
+          "description": null
+        },
+        {
+          "name": "Master Droit Numérique et Protection des Données Personnelles",
+          "domain": "Droit",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut de Stratégie et de Leadership (ISL)",
+      "email": "isl@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Master en Stratégie",
+          "domain": "Informatique",
+          "description": null
+        },
+        {
+          "name": "Master en Intelligence Artificielle (à partir de 2026)",
+          "domain": "Informatique",
+          "description": null
+        },
+        {
+          "name": "Master en Développement Durable (prévu en 2026)",
+          "domain": "Informatique",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut Supérieur des Langues et Affaires (ISLA)",
+      "email": "isla@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Business Management",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Marketing et Communication Digitale",
+          "domain": "Communication",
+          "description": null
+        },
+        {
+          "name": "Tourisme et Hôtellerie",
+          "domain": "Tourisme",
+          "description": null
+        },
+        {
+          "name": "Sciences et Technologies",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Licence et Master en Langues et Affaires",
+          "domain": null,
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut Supérieur de Management Adonaï (ISM Adonaï)",
+      "email": "info@ismadonai.bj",
+      "programs": [
+        {
+          "name": "Licence",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Master",
+          "domain": null,
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut Supérieur de Management et de Développement (ISMAD)",
+      "email": "ismadlmdcemafig@gmail.com",
+      "programs": [
+        {
+          "name": "Action commerciale et force de vente",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Administration de réseaux locaux d'entreprise",
+          "domain": "Informatique",
+          "description": null
+        },
+        {
+          "name": "Administration économique et sociale",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Assistant administratif",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Assistant de gestion des entreprises",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Assurance",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Assurance Finance et Banque",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Audit et contrôle de gestion",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Management et Administration des Entreprises",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Marketing et Communication",
+          "domain": "Communication",
+          "description": null
+        },
+        {
+          "name": "Microfinance",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Télécommunication et réseaux",
+          "domain": "Communication",
+          "description": null
+        },
+        {
+          "name": "Transport logistique et transit",
+          "domain": "Gestion",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut Supérieur des Sciences Économiques et Commerciales KOUVAHEY (ISSEC-KOUVAHEY)",
+      "email": "issec-kouvahey@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Brevet de Technicien (BT)",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Secrétariat",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Comptabilité",
+          "domain": "Comptabilité",
+          "description": null
+        },
+        {
+          "name": "Commerce",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Transport logistique et Transit",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Brevet de Technicien Supérieur (BTS)",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Communication des Entreprises",
+          "domain": "Communication",
+          "description": null
+        },
+        {
+          "name": "Assistant de Gestion PME/PMI",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Commerce International",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Finance-Banque",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Informatique de Gestion/ Développement d’Applications",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Comptabilité et gestion d’entreprise",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Secrétariat de Direction ou Assistant de Direction",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Télécommunications",
+          "domain": "Communication",
+          "description": null
+        },
+        {
+          "name": "Action commerciale et force de vente",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Assurance",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Assistant de Gestion des Ressources Humaines",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Licence professionnelle (Bac+3)",
+          "domain": null,
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut Supérieur des Technologies et de Management (ISTM)",
+      "email": "istm@import.boussole.tg",
+      "programs": [
+        {
+          "name": "BTS Comptabilité et gestion des entreprises",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "BTS Assistant de gestion PME/PMI",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "BTS Développeur d'applications",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Licence Finance et banque",
+          "domain": "Finance",
+          "description": null
+        },
+        {
+          "name": "Licence Transport-logistique et transit",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Licence Maintenance informatique",
+          "domain": "Informatique",
+          "description": null
+        },
+        {
+          "name": "Master Administration des entreprises",
+          "domain": "Gestion",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut Universitaire de Technologie de Gestion (IUT-Gestion)",
+      "email": "iut@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Formation en Gestion",
+          "domain": "Gestion",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Institut Supérieur des Technologies Avancées Jumau (JUMAU-ITA)",
+      "email": "jumauita@gmail.com",
+      "programs": [
+        {
+          "name": "Licence professionnelle en sciences agronomiques",
+          "domain": "Agronomie",
+          "description": null
+        },
+        {
+          "name": "Gestion et organisation de ressources humaines",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Comptabilité",
+          "domain": "Comptabilité",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Lomé Business School (LBS)",
+      "email": "lbs@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Bachelor Management (Licence)",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Bachelor Informatique (Licence)",
+          "domain": "Informatique",
+          "description": null
+        },
+        {
+          "name": "Masters (partenariat international)",
+          "domain": null,
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "LUCAS University College",
+      "email": "lucas-university@import.boussole.tg",
+      "programs": [
+        {
+          "name": "BTS Sciences de Gestion",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Licence en Management et Gestion",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Licence Informatique et Digital",
+          "domain": "Informatique",
+          "description": null
+        },
+        {
+          "name": "Master Sciences de Gestion",
+          "domain": "Gestion",
+          "description": null
+        },
+        {
+          "name": "Master Informatique et Réseaux",
+          "domain": "Informatique",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Upsilon Collège de Paris",
+      "email": "paris@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Formation en Ressources Humaines",
+          "domain": "Ressources Humaines",
+          "description": null
+        },
+        {
+          "name": "Formation en Gestion",
+          "domain": "Gestion",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Université Catholique de l'Afrique de l'Ouest (UCAO-UUT)",
+      "email": "scolarite@ucao-uut.tg",
+      "programs": [
+        {
+          "name": "Licence en Droit Privé",
+          "domain": "Droit",
+          "description": null
+        },
+        {
+          "name": "Licence en Économie appliquée",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Licence en Développement d'applications",
+          "domain": null,
+          "description": null
+        },
+        {
+          "name": "Master en Communication Publique et Politique",
+          "domain": "Communication",
+          "description": null
+        },
+        {
+          "name": "Master en Sciences de l'Éducation",
+          "domain": "Éducation",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "Centre International de Recherche et d’Études de Langue (Village du Bénin)",
+      "email": "village-du-benin@import.boussole.tg",
+      "programs": [
+        {
+          "name": "Licence en Langues étrangères",
+          "domain": null,
+          "description": null
+        }
+      ]
+    }
+  ]
+}

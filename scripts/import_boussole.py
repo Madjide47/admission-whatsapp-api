@@ -19,6 +19,7 @@ Format JSON attendu :
           "programs": [
             {
               "name": "Licence Informatique",
+              "domain": "Informatique",                       # optionnel (filtre bot)
               "description": "Formation de 3 ans en informatique."
             }
           ]
@@ -130,6 +131,7 @@ def run_import(data: dict, dry_run: bool = False) -> None:
             for prog_data in programs_data:
                 prog_name = prog_data.get("name", "").strip()
                 prog_desc = prog_data.get("description", None)
+                prog_domain = prog_data.get("domain", None)
 
                 if not prog_name:
                     print(f"  [AVERTISSEMENT] Programme ignoré (name manquant) pour {name}")
@@ -148,6 +150,7 @@ def run_import(data: dict, dry_run: bool = False) -> None:
                     prog = Program(
                         university_id=univ.id,
                         name=prog_name,
+                        domain=prog_domain,
                         description=prog_desc,
                         is_active=True,
                     )

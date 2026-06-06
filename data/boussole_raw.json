@@ -1,0 +1,1668 @@
+[
+  {
+    "id": "atlantis",
+    "informations_generales": {
+      "nom_court": "Institut des Hautes Technologies d'Informatique et de Bureautique",
+      "nom_complet": "Institut des Hautes Technologies d'Informatique et de Bureautique (HTIB) Atlantis",
+      "type": "Institut",
+      "quartier": "Lomé",
+      "ville": "Lomé",
+      "contacts": {
+        "email": "contact@logoti.net"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Licence Professionnelle d’Informatique",
+        "Licence Gestion / Comptabilité",
+        "DUT (Diplôme Universitaire de Technologie)"
+      ],
+      "domaines_etude": [
+        "Informatique",
+        "Gestion"
+      ]
+    },
+    "accreditations": [
+      "Reconnu par le Ministère de l’Enseignement Supérieur du Togo"
+    ],
+    "partenariats": [
+      "Entreprises IT locales",
+      "Réseau des établissements de gestion"
+    ]
+  },
+  {
+    "id": "avenida",
+    "informations_generales": {
+      "nom_court": "Hôtel École Avenida",
+      "nom_complet": "Hôtel École Avenida",
+      "type": "École",
+      "quartier": "30",
+      "ville": "Lomé"
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "BTS Hôtellerie",
+        "BTS Restauration",
+        "BTS Cuisine Professionnelle",
+        "Licence professionnelle Tourisme et Loisirs"
+      ],
+      "domaines_etude": []
+    },
+    "accreditations": [
+      "Ministère de l’Enseignement Supérieur et de la Recherche, Togo"
+    ],
+    "partenariats": [
+      "Entreprises hôtelières de Lomé",
+      "Professionnels du secteur restauration"
+    ]
+  },
+  {
+    "id": "cfbt",
+    "informations_generales": {
+      "nom_court": "Centre de Formation Bancaire du Togo",
+      "nom_complet": "Centre de Formation Bancaire du Togo (CFBT)",
+      "type": "Centre de formation",
+      "quartier": "Docteur Kaolo",
+      "ville": "Tokoin Tamé – 01 BP 4863 Lomé",
+      "annee_creation": "1979",
+      "contacts": {
+        "site_web": "https://cfbtogo.tg"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [],
+      "domaines_etude": [
+        "Finance",
+        "Gestion"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l’Enseignement Supérieur",
+      "Ministère de l’Enseignement Technique et de la Formation Professionnelle"
+    ],
+    "partenariats": [
+      "École Supérieure de Banque",
+      "Etablissements de crédit au Togo",
+      "Banques et partenaires de microfinance"
+    ]
+  },
+  {
+    "id": "cifop",
+    "informations_generales": {
+      "nom_court": "Centre International de Formation Professionnelle",
+      "nom_complet": "Centre International de Formation Professionnelle (CIFOP)",
+      "type": "Centre de formation",
+      "quartier": "Lomé",
+      "ville": "Lomé",
+      "annee_creation": "1992",
+      "contacts": {
+        "site_web": "https://cifop-togo.org"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Développement d’applications",
+        "Gestion d’Entreprises",
+        "Transport et Logistique",
+        "Marketing et Communication"
+      ],
+      "domaines_etude": [
+        "Gestion",
+        "Communication"
+      ]
+    },
+    "accreditations": [
+      "CAMES",
+      "Reconnaissance internationale"
+    ],
+    "partenariats": [
+      "Plus de 200 partenaires : entreprises, agences, institutions pour stages et alternances"
+    ]
+  },
+  {
+    "id": "defitech",
+    "informations_generales": {
+      "nom_court": "Institut Polytechnique Défitech",
+      "nom_complet": "Institut Polytechnique Défitech",
+      "type": "Institut",
+      "quartier": "du Haho",
+      "ville": "Lomé",
+      "annee_creation": "2002",
+      "contacts": {
+        "email": "defitech@defitech.tg",
+        "telephone": "(+228) 22 26 25 25 / (+228) 22 26 24 24 / (+228) 93 97 62 62",
+        "site_web": "https://defitech.tg/"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "BTS (Brevet de Technicien Supérieur)",
+        "Secrétariat de direction",
+        "Assistant de gestion PME-PMI",
+        "Communication des entreprises",
+        "Commerce international",
+        "Action commerciale et force de vente",
+        "Finance banque",
+        "Comptabilité et gestion des entreprises",
+        "Télécommunications et réseaux",
+        "Administrateur de réseaux locaux d'entreprise",
+        "Développeur d'applications",
+        "Génie Civil",
+        "Licence Professionnelle",
+        "Gestion commerciale et marketing",
+        "Comptabilité et finance",
+        "Banque, finance, assurances",
+        "Génie logiciel",
+        "Énergie renouvelable",
+        "Master Professionnel",
+        "Management des ressources humaines",
+        "Audit et contrôle de gestion",
+        "Communication et relations publiques"
+      ],
+      "domaines_etude": [
+        "Communication",
+        "Informatique",
+        "Gestion",
+        "Finance",
+        "Santé",
+        "Génie",
+        "Ressources Humaines"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l’Enseignement Supérieur du Togo",
+      "Partenariats universitaires et grandes écoles (Université de Lomé, CIC, SUP TELECOM Bénin)"
+    ],
+    "partenariats": [
+      "Université de Lomé",
+      "SUP TELECOM Bénin",
+      "Faculté des Sciences de l’Université de Lomé"
+    ]
+  },
+  {
+    "id": "don-bosco",
+    "informations_generales": {
+      "nom_court": "Institut Supérieur Don Bosco",
+      "nom_complet": "Institut Supérieur Don Bosco (ISDB)",
+      "type": "Institut",
+      "quartier": "Akodessewa",
+      "ville": "Lomé",
+      "annee_creation": "1986",
+      "contacts": {
+        "email": "prefecturedesetudes@ispshdblome.com",
+        "site_web": "https://www.isdblome.com"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Licence en Philosophie",
+        "Licence Sciences de l’Éducation",
+        "Licence Sciences et Techniques de la Communication (STC)",
+        "Master Recherche Philosophie",
+        "Master professionnel Sciences de l’Éducation",
+        "Master Communication et Marketing Territorial"
+      ],
+      "domaines_etude": [
+        "Gestion",
+        "Communication"
+      ]
+    },
+    "accreditations": [
+      "CAMES",
+      "Ministère de l’Éducation Nationale et de la Recherche Togo"
+    ],
+    "partenariats": [
+      "UPS Rome",
+      "Maison Don Bosco",
+      "Communauté Salésienne",
+      "Instituts salésiens mondiaux"
+    ]
+  },
+  {
+    "id": "ecoledescadres",
+    "informations_generales": {
+      "nom_court": "Ecole des Cadres de Lomé",
+      "nom_complet": "Ecole des Cadres de Lomé",
+      "type": "École",
+      "quartier": "Avenou",
+      "ville": "Lomé",
+      "annee_creation": "1997",
+      "contacts": {
+        "email": "contact@ecoledescadrestogo.com",
+        "site_web": "https://ecoledescadres.com"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "BTS Assistant de Gestion PME-PMI",
+        "BTS Action Commerciale et Force de Vente",
+        "Licence Professionnelle Insurance, Banque, Finance",
+        "Licence Communication & Multimédia",
+        "Licence Commerce International",
+        "Master Management et Marketing à l'international",
+        "Master Gestion Logistique et Transport"
+      ],
+      "domaines_etude": [
+        "Gestion",
+        "Finance",
+        "Communication"
+      ]
+    },
+    "accreditations": [
+      "Arrêté N° 96/068/METFPA du 12/12/96",
+      "CAMES",
+      "Diplômes d'État togolais et français"
+    ],
+    "partenariats": [
+      "Université du Littoral Côte d’Opale",
+      "Organismes professionnels et entreprises"
+    ]
+  },
+  {
+    "id": "ens",
+    "informations_generales": {
+      "nom_court": "École Normale Supérieure d’Atakpamé",
+      "nom_complet": "École Normale Supérieure d’Atakpamé (ENS)",
+      "type": "École",
+      "quartier": "Atakpamé",
+      "ville": "Atakpamé",
+      "annee_creation": "1970s",
+      "contacts": {
+        "site_web": "https://ensatakpame.com"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Licence Professionnelle d’Enseignement (LPE)"
+      ],
+      "domaines_etude": []
+    },
+    "accreditations": [
+      "Ministère de l’Enseignement Supérieur et de la Recherche",
+      "CAMES"
+    ],
+    "partenariats": [
+      "ENFPE (Écoles Normales de Formation des Professeurs d’Ecole)",
+      "Université de Lomé",
+      "Université de Kara"
+    ]
+  },
+  {
+    "id": "esam",
+    "informations_generales": {
+      "nom_court": "École Supérieure d'Audit et de Management",
+      "nom_complet": "École Supérieure d'Audit et de Management (ESAM)",
+      "type": "École",
+      "quartier": "10",
+      "ville": "Lomé",
+      "contacts": {
+        "site_web": "http://www.esamecole.fr"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Bachelor en Audit et Contrôle de Gestion",
+        "Master Comptabilité Contrôle Audit (CCA)",
+        "Master Management des Organisations",
+        "MBA Audit et Management",
+        "Expertise Comptable DEC"
+      ],
+      "domaines_etude": [
+        "Gestion",
+        "Génie"
+      ]
+    },
+    "accreditations": [
+      "CAMES (Conseil Africain et Malgache pour l'Enseignement Supérieur)",
+      "Agrément N° 2008/080/METFP/CAB/SG/CPO-SE",
+      "EUROPASS (label européen)",
+      "Etat Togolais"
+    ],
+    "partenariats": [
+      "CNAM-INTEC Paris",
+      "Institutions bancaires et cabinets d’audit à Lomé"
+    ]
+  },
+  {
+    "id": "esatg",
+    "informations_generales": {
+      "nom_court": "École Supérieure des Affaires",
+      "nom_complet": "École Supérieure des Affaires (ESA-Togo)",
+      "type": "École",
+      "quartier": "Lomé",
+      "ville": "Lomé",
+      "annee_creation": "2010",
+      "contacts": {
+        "site_web": "https://www.esatogo.com"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Comptabilité et Gestion des Entreprises",
+        "Finance-Banque",
+        "Assistant de Gestion PME/PMI",
+        "Assurance",
+        "Secrétariat de Direction",
+        "Secrétariat commercial bilingue",
+        "Commerce International",
+        "Transport Logistique et Transit",
+        "Communication des Entreprises",
+        "Génie Civil",
+        "Electrotechnique",
+        "Informatique Industrielle",
+        "Banque/Assurance",
+        "Marketing-Communication",
+        "Gestion Commerciale",
+        "Journalisme",
+        "Sciences Techniques Comptables et Financières",
+        "Informatique de Gestion",
+        "Génie Logiciel",
+        "Diplomatie Protocole et Relations Publiques",
+        "Management",
+        "Audit et Contrôle de Gestion",
+        "Gestion de Projets",
+        "DESCOGEF",
+        "Qualité Sécurité Environnement",
+        "Ressources Humaines",
+        "Diplomatie/Relations Internationales",
+        "Marketing Digital",
+        "Sciences de Gestion",
+        "Administration",
+        "Commerce",
+        "Développement durable"
+      ],
+      "domaines_etude": [
+        "Communication",
+        "Informatique",
+        "Gestion",
+        "Finance",
+        "Génie",
+        "Ressources Humaines"
+      ]
+    },
+    "accreditations": [
+      "CAMES",
+      "Ministère de l’Enseignement Supérieur du Togo",
+      "ISO 9001 version 2015"
+    ],
+    "partenariats": [
+      "Université d’Abomey-Calavi (Bénin)",
+      "Huston-Tillotson University (États-Unis)",
+      "Centre d’Excellence UEMOA (DECOGEF/DESCOGEF)",
+      "Sorbonne International",
+      "Washington International Management Institute"
+    ]
+  },
+  {
+    "id": "escen",
+    "informations_generales": {
+      "nom_court": "École Supérieure de Commerce et d'Économie Numérique",
+      "nom_complet": "École Supérieure de Commerce et d'Économie Numérique (ESCEN)",
+      "type": "École",
+      "quartier": "Lomé",
+      "ville": "Lomé",
+      "contacts": {
+        "site_web": "https://escen.university"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [],
+      "domaines_etude": [
+        "Communication",
+        "Gestion",
+        "Finance",
+        "Informatique",
+        "Génie"
+      ]
+    },
+    "accreditations": [
+      "Reconnaissance officielle de l'État togolais",
+      "Partenariat académique France (ESTIA, France Compétences-RNCP niveau 6 et 7)"
+    ],
+    "partenariats": [
+      "ESTIA France",
+      "Entreprises partenaires pour stages et masterclass"
+    ]
+  },
+  {
+    "id": "esec",
+    "informations_generales": {
+      "nom_court": "École Supérieure des Études Cinématographiques",
+      "nom_complet": "École Supérieure des Études Cinématographiques (ESEC)",
+      "type": "École",
+      "quartier": "74",
+      "ville": "Lomé",
+      "contacts": {
+        "email": "eseclome@gmail.com"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Assistant ingénieur de son",
+        "Assistant monteur",
+        "Assistant opérateur de prise de vue",
+        "Assistant production",
+        "Assistant réalisateur",
+        "Ingénierie communication multimédia",
+        "Ingénierie de son",
+        "Ingénierie montage",
+        "Ingénierie production",
+        "Journaliste reporter d'image",
+        "Technicien audiovisuel"
+      ],
+      "domaines_etude": [
+        "Génie",
+        "Communication"
+      ]
+    },
+    "accreditations": [
+      "Reconnaissance Ministère de l'Enseignement Supérieur Togo"
+    ]
+  },
+  {
+    "id": "esgis",
+    "informations_generales": {
+      "nom_court": "École Supérieure de Gestion d'Informatique et des Sciences",
+      "nom_complet": "École Supérieure de Gestion d'Informatique et des Sciences (ESGIS)",
+      "type": "École",
+      "quartier": "du 30 Août",
+      "ville": "Lomé",
+      "annee_creation": "1994",
+      "contacts": {
+        "email": "esgis.togo@esgis.org",
+        "site_web": "https://www.esgis.org"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [],
+      "domaines_etude": [
+        "Santé",
+        "Droit",
+        "Gestion",
+        "Finance",
+        "Informatique",
+        "Communication"
+      ]
+    },
+    "accreditations": [
+      "Conseil Africain et Malgache de l’Enseignement Supérieur (CAMES)",
+      "Reconnaissance Ministère de l’Enseignement Supérieur et de la Recherche du Togo, Bénin, Gabon"
+    ],
+    "partenariats": [
+      "Universités et Grandes Écoles en France et en Suisse (doubles diplômes)",
+      "Institutions publiques et privées africaines"
+    ]
+  },
+  {
+    "id": "esma",
+    "informations_generales": {
+      "nom_court": "Ecole Supérieure de Management des Affaires",
+      "nom_complet": "Ecole Supérieure de Management des Affaires (ESMA-Togo)",
+      "type": "École",
+      "quartier": "Attiégou",
+      "ville": "Lomé",
+      "annee_creation": "2012",
+      "contacts": {
+        "site_web": "https://esmatogo.com"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "BTS/DTS/DUT (BAC+2)",
+        "Licence (BAC+3)",
+        "Master (BAC+5)"
+      ],
+      "domaines_etude": [
+        "Informatique",
+        "Gestion",
+        "Finance",
+        "Santé",
+        "Communication",
+        "Génie",
+        "Ressources Humaines"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l’Enseignement Supérieur du Togo",
+      "Diplômes reconnus CAMES et Etat togolais"
+    ],
+    "partenariats": [
+      "Université de Lomé",
+      "IFGI",
+      "Institutions locales"
+    ]
+  },
+  {
+    "id": "espc",
+    "informations_generales": {
+      "nom_court": "École Supérieure des Ponts et Chaussées",
+      "nom_complet": "École Supérieure des Ponts et Chaussées (ESPC)",
+      "type": "École",
+      "quartier": "Hédzanawoé",
+      "ville": "Lomé",
+      "contacts": {
+        "site_web": "https://www.ecole-ingenieurs-espc.com"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Licence en Génie Civil",
+        "Master Ingénieur de Conception (Génie Civil, Génie Mécanique, Génie Hydraulique, Génie Électrique)",
+        "Masters spécialisés (Bac+5, post-ingénieur)"
+      ],
+      "domaines_etude": [
+        "Santé",
+        "Génie",
+        "Gestion"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l’Enseignement Supérieur et de la Recherche du Togo"
+    ],
+    "partenariats": [
+      "Entreprises de génie civil et BTP, industries locales et ouest-africaines"
+    ]
+  },
+  {
+    "id": "estabat",
+    "informations_generales": {
+      "nom_court": "École Supérieure des Techniques Agricoles, Biologiques et Alimentaires d'Atakpamé",
+      "nom_complet": "École Supérieure des Techniques Agricoles, Biologiques et Alimentaires d'Atakpamé (ESTABAT)",
+      "type": "École",
+      "quartier": "Atakpamé",
+      "ville": "Atakpamé",
+      "annee_creation": "Années 2010"
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Licence professionnelle en Agronomie",
+        "Licence professionnelle en Agroalimentaire"
+      ],
+      "domaines_etude": [
+        "Agriculture"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l’Enseignement Supérieur et de la Recherche du Togo",
+      "CAMES"
+    ],
+    "partenariats": [
+      "Université de Lomé",
+      "Institutions agricoles et agroalimentaires régionales"
+    ]
+  },
+  {
+    "id": "esteca",
+    "informations_generales": {
+      "nom_court": "École Supérieure de Technologie du Cinéma et de l’Audiovisuel",
+      "nom_complet": "École Supérieure de Technologie du Cinéma et de l’Audiovisuel (ESTECA)",
+      "type": "École",
+      "quartier": "Agoè Logopé",
+      "ville": "Lomé",
+      "contacts": {
+        "site_web": "https://esteca.over-blog.com"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Licence professionnelle Cinéma & Audiovisuel",
+        "Formation technique en audiovisuel"
+      ],
+      "domaines_etude": []
+    },
+    "accreditations": [
+      "Ministère de l’Enseignement Supérieur du Togo"
+    ],
+    "partenariats": []
+  },
+  {
+    "id": "esthsm",
+    "informations_generales": {
+      "nom_court": "Ecole Supérieure des Techniques et Arts de la Communication",
+      "nom_complet": "Ecole Supérieure des Techniques et Arts de la Communication (ESTAC)",
+      "type": "École",
+      "quartier": "Agoè Cacaveli",
+      "ville": "Lomé",
+      "annee_creation": "2003",
+      "contacts": {
+        "email": "estactogo@gmail.com",
+        "telephone": "+228 91 82 21 01 / +228 99 48 50 09",
+        "site_web": "https://estactogo.fr"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Formation en Journalisme",
+        "Formation en Communication"
+      ],
+      "domaines_etude": [
+        "Communication"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l’Enseignement Technique et de la Formation Professionnelle du Togo"
+    ],
+    "partenariats": [
+      "Instituts partenaires nationaux et étrangers",
+      "Organes de presse togolais et internationaux"
+    ]
+  },
+  {
+    "id": "fatad",
+    "informations_generales": {
+      "nom_court": "Faculté de Théologie des Assemblées de Dieu",
+      "nom_complet": "Faculté de Théologie des Assemblées de Dieu (FATAD)",
+      "type": "Faculté",
+      "quartier": "Lomé",
+      "ville": "Lomé",
+      "annee_creation": "1971",
+      "contacts": {
+        "email": "archiviste@fatad.org",
+        "site_web": "https://www.waast.org/la-fatad/"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [],
+      "domaines_etude": [
+        "Santé"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l’Enseignement Supérieur et de la Recherche du Togo",
+      "Service Africain de Formation Théologique (SAFT)",
+      "Alliance des Assemblées de Dieu d’Afrique (AADA)",
+      "Affiliation Assemblées de Dieu"
+    ],
+    "partenariats": [
+      "Université de Lomé",
+      "Pan-Africa Theological Seminary (PAThS)",
+      "Centres d’extension WAAST/Dakar/Antananarivo"
+    ]
+  },
+  {
+    "id": "fimac",
+    "informations_generales": {
+      "nom_court": "École Supérieure de Formation Professionnelle FIMAC",
+      "nom_complet": "École Supérieure de Formation Professionnelle FIMAC (ESFP-FIMAC)",
+      "type": "École",
+      "quartier": "Adidoadin",
+      "ville": "Lomé",
+      "contacts": {
+        "email": "fimac@fimactogo.net"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Assistant de gestion PME/PMI",
+        "Secrétariat de direction",
+        "Archiviste documentaliste",
+        "Transport logistique et transit",
+        "Comptabilité et gestion des entreprises",
+        "Action commerciale et force de vente",
+        "Finance - banque",
+        "Développement d'applications",
+        "Maintenance informatique et réseaux",
+        "Electrotechnique",
+        "Admin. et réseaux locaux d’entreprises",
+        "Gestion des collectivités locales",
+        "Assurance",
+        "Hôtellerie"
+      ],
+      "domaines_etude": [
+        "Gestion",
+        "Finance",
+        "Informatique"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l’Enseignement Supérieur Togo"
+    ],
+    "partenariats": [
+      "Partenariats avec structures françaises"
+    ]
+  },
+  {
+    "id": "formatec",
+    "informations_generales": {
+      "nom_court": "FORMATEC",
+      "nom_complet": "FORMATEC (Institut des Sciences Technologiques, Économiques et Administratives)",
+      "type": "Institut",
+      "quartier": "Agoè-Cacaveli",
+      "ville": "Lomé",
+      "annee_creation": "1996 (sous ING INFO), FORMATEC depuis 2002",
+      "contacts": {
+        "email": "formatec03@yahoo.fr",
+        "site_web": "https://formatec.tg"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Licence professionnelle",
+        "Master professionnel",
+        "Brevet de Technicien Supérieur"
+      ],
+      "domaines_etude": [
+        "Communication",
+        "Informatique",
+        "Gestion",
+        "Génie",
+        "Ressources Humaines",
+        "Finance"
+      ]
+    },
+    "accreditations": [
+      "Certification ISO 9001 (depuis 2015)",
+      "Certification ISO 21001 (2024)",
+      "Reconnaissance par l'État Togolais en 2016 (MESR)"
+    ],
+    "partenariats": [
+      "10 universités, laboratoires, institutions commerciales au Togo et en Afrique"
+    ]
+  },
+  {
+    "id": "hetml",
+    "informations_generales": {
+      "nom_court": "Institut des Hautes Études de Management de Lomé",
+      "nom_complet": "Institut des Hautes Études de Management de Lomé (HETML)",
+      "type": "Institut",
+      "quartier": "Lomé",
+      "ville": "Lomé"
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Licence en Management des Organisations",
+        "Licence en Administration des Affaires",
+        "Master en Management / Administration"
+      ],
+      "domaines_etude": [
+        "Gestion"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l’Enseignement Supérieur du Togo"
+    ],
+    "partenariats": []
+  },
+  {
+    "id": "iadss",
+    "informations_generales": {
+      "nom_court": "Institut Africain de Développement Sanitaire et Social",
+      "nom_complet": "Institut Africain de Développement Sanitaire et Social (IADSS)",
+      "type": "Institut",
+      "quartier": "Djidjolé",
+      "ville": "Lomé",
+      "annee_creation": "2015",
+      "contacts": {
+        "site_web": "https://www.iadsstotogo.com"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Licence professionnelle en Sciences de la Santé (Soins Infirmiers, Soins Obstétricaux et Néonataux)",
+        "Licence professionnelle en Radiologie et Imagerie médicale",
+        "Licence professionnelle en Analyses biomédicales",
+        "Licence professionnelle en Gestion de bases de données en santé, Épidémiologie Nutritionnelle, Éducation spécialisée",
+        "Licence en Santé Animale et Productions animales",
+        "Master professionnel en Santé Publique",
+        "Master professionnel en Sciences Médico-chirurgicales"
+      ],
+      "domaines_etude": [
+        "Santé",
+        "Gestion"
+      ]
+    },
+    "accreditations": [
+      "Reconnu par l’État togolais sous l’arrêté n°030/MERS/SG/DES du 4 mai 2016",
+      "Renouvelé par l’arrêté n°044/MERS/SG/DES du 6 juin 2018",
+      "Renouvelé par l’arrêté n°050/MERS/SG/DES du 28 avril 2023"
+    ],
+    "partenariats": [
+      "Ministère de l’Enseignement Supérieur et de la Recherche du Togo",
+      "Institutions de santé publiques et privées locales"
+    ]
+  },
+  {
+    "id": "iaec",
+    "informations_generales": {
+      "nom_court": "IAEC",
+      "nom_complet": "IAEC",
+      "type": "Institut",
+      "quartier": "Non spécifié",
+      "ville": "Lomé"
+    },
+    "programmes": {
+      "diplomes_proposes": [],
+      "domaines_etude": []
+    }
+  },
+  {
+    "id": "iai",
+    "informations_generales": {
+      "nom_court": "Institut Africain d'Informatique",
+      "nom_complet": "Institut Africain d'Informatique (IAI-Togo)",
+      "type": "Institut",
+      "quartier": "Lomé",
+      "ville": "Lomé"
+    },
+    "programmes": {
+      "diplomes_proposes": [],
+      "domaines_etude": [
+        "Informatique",
+        "Finance",
+        "Génie"
+      ]
+    },
+    "accreditations": [
+      "Réseau IAI (inter-États, structuré en 1971)",
+      "Ministère de la Planification du Développement et de la Coopération, Togo"
+    ],
+    "partenariats": [
+      "Centres IAI du réseau africain",
+      "Entreprises informatiques pour stages"
+    ]
+  },
+  {
+    "id": "ifford",
+    "informations_generales": {
+      "nom_court": "Institut de Formation et de Recherche pour le Développement Durable",
+      "nom_complet": "Institut de Formation et de Recherche pour le Développement Durable (IFORDD)",
+      "type": "Institut",
+      "quartier": "11HDN",
+      "ville": "Lomé",
+      "contacts": {
+        "email": [
+          "contact@ifordd.org",
+          "info@ifordd.org",
+          "support@ifordd.org",
+          "ifordd@ifordd.org",
+          "secretariat@ifordd.org"
+        ],
+        "site_web": "https://ifordd.org"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "BTS Gestion de l'Environnement",
+        "Licence en Droit Public",
+        "Licence en Administration et Gestion Fiscale",
+        "Licence en Ingénierie du Développement Durable",
+        "Master en Décentralisation et Gouvernance Locale",
+        "Master Passation & Gestion des Marchés Publics",
+        "Master Gouvernance et Management des Organisations"
+      ],
+      "domaines_etude": [
+        "Gestion",
+        "Droit",
+        "Génie"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l’Enseignement Supérieur et de la Recherche",
+      "CAMES"
+    ],
+    "partenariats": [
+      "Institut International des Sciences Fiscales de Paris (2iSF)",
+      "Université Paris 1 Panthéon-Sorbonne (IED-EDS)"
+    ]
+  },
+  {
+    "id": "ifts",
+    "informations_generales": {
+      "nom_court": "Institut de Formation Technique et Supérieure",
+      "nom_complet": "Institut de Formation Technique et Supérieure (IFTS)",
+      "type": "Institut",
+      "quartier": "Lomé",
+      "ville": "Lomé",
+      "contacts": {
+        "site_web": "https://www.ifts-tg.com"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Licence en Génie Civil",
+        "Licence en Génie Électrique",
+        "Licence en Génie Mécanique",
+        "Master en Ingénierie"
+      ],
+      "domaines_etude": [
+        "Génie"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l’Enseignement Supérieur Togo"
+    ],
+    "partenariats": []
+  },
+  {
+    "id": "imast",
+    "informations_generales": {
+      "nom_court": "Institut des Mathématiques et Sciences et Technologies",
+      "nom_complet": "Institut des Mathématiques et Sciences et Technologies (IMaST)",
+      "type": "Institut",
+      "quartier": "Agoè-Nyivé",
+      "ville": "Lomé",
+      "contacts": {
+        "email": "imastagoe@gmail.com",
+        "site_web": "https://imast.tg"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Licences professionnelles",
+        "Master professionnel en enseignement des mathématiques",
+        "Master professionnel en enseignement des sciences physiques",
+        "Année préparatoire en mathématiques et sciences physiques",
+        "Brevet de Technicien Supérieur"
+      ],
+      "domaines_etude": [
+        "Informatique",
+        "Génie"
+      ]
+    },
+    "accreditations": [
+      "Reconnu par le Ministère de l'Enseignement Supérieur du Togo",
+      "Agrément MESR 2025"
+    ],
+    "partenariats": [
+      "Collaborations nationales et internationales",
+      "Centres de Grandes Écoles"
+    ]
+  },
+  {
+    "id": "imp",
+    "informations_generales": {
+      "nom_court": "Institut Supérieur Privé de Management du Togo",
+      "nom_complet": "Institut Supérieur Privé de Management du Togo (IPM-Togo)",
+      "type": "Institut",
+      "quartier": "Adidoadin",
+      "ville": "Lomé",
+      "annee_creation": "2015",
+      "contacts": {
+        "email": "contact@ipmtogo.com",
+        "site_web": "https://ipmtogo.com"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Licence en Finance Comptabilité",
+        "Licence en Comptabilité Contrôle Audit",
+        "Licence en Gestion des Ressources Humaines",
+        "Licence en Management des Organisations",
+        "Licence en Marketing et Communication",
+        "Licence en Commerce International et Logistique",
+        "Master en Finance Comptabilité",
+        "Master en Comptabilité Contrôle Audit",
+        "Master en Gestion des Ressources Humaines",
+        "Master en Marketing et Communication",
+        "Master en Management des Organisations",
+        "Master en Gestion des Projets",
+        "Master en Commerce International et Logistique"
+      ],
+      "domaines_etude": [
+        "Gestion",
+        "Finance",
+        "Ressources Humaines",
+        "Communication"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l'Enseignement Supérieur du Togo"
+    ],
+    "partenariats": []
+  },
+  {
+    "id": "ipbtp",
+    "informations_generales": {
+      "nom_court": "Institut Polytechnique des Bâtiments et des Travaux Publics",
+      "nom_complet": "Institut Polytechnique des Bâtiments et des Travaux Publics (IPBTP)",
+      "type": "Institut",
+      "quartier": "Lomé",
+      "ville": "Lomé",
+      "annee_creation": "2001",
+      "contacts": {
+        "email": "ipbtp@ipbtp.com"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [],
+      "domaines_etude": [
+        "Génie"
+      ]
+    },
+    "accreditations": [
+      "Agréé par l’État togolais"
+    ]
+  },
+  {
+    "id": "ipnet",
+    "informations_generales": {
+      "nom_court": "IPNet Institute of Technology",
+      "nom_complet": "IPNet Institute of Technology",
+      "type": "Institut",
+      "quartier": "Tour IPNET",
+      "ville": "Lomé",
+      "annee_creation": "2017",
+      "contacts": {
+        "email": "ipnet@ipnetinstitute.com",
+        "site_web": "https://ipnetinstitute.com"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Licence Réseaux, Systèmes & Sécurité",
+        "Licence Génie Logiciel",
+        "Licence Sciences des Données",
+        "Licences cours du soir (pour BTS, DUT, ou Licence non-informatique)",
+        "Master Cybersécurité",
+        "MBA Gouvernance, Audit et Sécurité des Systèmes d’Information"
+      ],
+      "domaines_etude": [
+        "Informatique",
+        "Génie"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l'Enseignement Supérieur du Togo",
+      "Partenariat avec l'Union Africaine (AU)",
+      "Lauréat Palme Internationale Innovante (2022, 2024)",
+      "Prix Africain du Mérite et de l'Excellence, PADEV 2022"
+    ],
+    "partenariats": [
+      "Union Africaine/AUDA-NEPAD",
+      "Banque KFW (coopération allemande)",
+      "Université canadienne",
+      "Grands groupes informatiques mondiaux",
+      "Incubateurs start-up high-tech"
+    ]
+  },
+  {
+    "id": "irfodel",
+    "informations_generales": {
+      "nom_court": "Institut de Recherche et de Formation pour le Développement Local",
+      "nom_complet": "Institut de Recherche et de Formation pour le Développement Local (IRFODEL)",
+      "type": "Institut",
+      "quartier": "Tokoin Abové",
+      "ville": "Lomé",
+      "annee_creation": "2006",
+      "contacts": {
+        "email": "contact@irfodel.com / secretariatirfodel@yahoo.fr",
+        "site_web": "https://irfodel.com"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [],
+      "domaines_etude": [
+        "Gestion"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l'Enseignement Technique et de la Formation Professionnelle (agrément n° 2010/056/METFP)",
+      "Ministère de l’Administration Territoriale",
+      "Membre du réseau PROFADEL"
+    ],
+    "partenariats": [
+      "DELTA C (Mali)",
+      "Escuela para el Desarrollo (Pérou)",
+      "FFF Malagasy Mahomby (Madagascar)",
+      "CIEDEL (France)",
+      "CERSS (Maroc)",
+      "EED Allemagne",
+      "France Volontaires",
+      "Association YOVO",
+      "IABSE"
+    ]
+  },
+  {
+    "id": "isac",
+    "informations_generales": {
+      "nom_court": "Institut Supérieur Agata Carelli",
+      "nom_complet": "Institut Supérieur Agata Carelli (ISAC)",
+      "type": "Institut",
+      "quartier": "Agoè-Légbassito",
+      "ville": "Lomé",
+      "annee_creation": "1994"
+    },
+    "programmes": {
+      "diplomes_proposes": [],
+      "domaines_etude": [
+        "Gestion",
+        "Santé",
+        "Communication",
+        "Ressources Humaines",
+        "Informatique",
+        "Génie"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l'Enseignement Supérieur",
+      "Diplômes BTS, Licence, Master reconnus"
+    ],
+    "partenariats": [
+      "CCFT-Madre Agata Carelli",
+      "Entreprises locales"
+    ]
+  },
+  {
+    "id": "isages",
+    "informations_generales": {
+      "nom_court": "Institut Supérieur d'Administration des Sciences Economiques et de Gestion de Santé",
+      "nom_complet": "Institut Supérieur d'Administration des Sciences Economiques et de Gestion de Santé (ISAGES)",
+      "type": "Institut",
+      "quartier": "Avenue Pya",
+      "ville": "Lomé",
+      "annee_creation": "2014",
+      "contacts": {
+        "email": "contact@isagestogo.com",
+        "site_web": "https://www.isagestogo.com"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [],
+      "domaines_etude": [
+        "Communication",
+        "Gestion",
+        "Santé",
+        "Génie",
+        "Ressources Humaines"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l’Enseignement Supérieur et de la Recherche Togo",
+      "CAMES"
+    ],
+    "partenariats": [
+      "Ecole Supérieure de Kinésithérapie et du Paramédical (Marrakech, Maroc)",
+      "SUP MANAGEMENT BURKINA",
+      "Laboratoires, agences pharmaceutiques, pharmacies locales"
+    ]
+  },
+  {
+    "id": "isdi",
+    "informations_generales": {
+      "nom_court": "Institut Supérieur de Droit et d’Interprétariat",
+      "nom_complet": "Institut Supérieur de Droit et d’Interprétariat (ISDI)",
+      "type": "Institut",
+      "quartier": "21 BKK",
+      "ville": "derrière FUCEC Atikoumé - 22 BP 302 Lomé",
+      "annee_creation": "2014",
+      "contacts": {
+        "email": "isditogo@gmail.com",
+        "site_web": "https://isditogo.com"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Licence Fondamentale en Sciences Juridiques, Politiques et de l’Administration - Droit privé",
+        "Licence Fondamentale en Sciences Juridiques, Politiques et de l’Administration - Droit public",
+        "Licence professionnelle Interprète-Traducteur",
+        "Master professionnel Droit des affaires et fiscalité",
+        "Master Sciences Politiques",
+        "Master Droit de l’Entreprise",
+        "Master Droit Numérique et Protection des Données Personnelles"
+      ],
+      "domaines_etude": [
+        "Génie",
+        "Droit",
+        "Finance"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l’Enseignement Supérieur",
+      "CAMES (Conseil Africain et Malgache pour l'Enseignement Supérieur)",
+      "ISO 9001"
+    ]
+  },
+  {
+    "id": "isl",
+    "informations_generales": {
+      "nom_court": "Institut de Stratégie et de Leadership",
+      "nom_complet": "Institut de Stratégie et de Leadership (ISL)",
+      "type": "Institut",
+      "quartier": "Lomé",
+      "ville": "Lomé",
+      "annee_creation": "2025",
+      "contacts": {
+        "site_web": "https://isl.togo"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Master en Stratégie",
+        "Master en Intelligence Artificielle (à partir de 2026)",
+        "Master en Développement Durable (prévu en 2026)"
+      ],
+      "domaines_etude": [
+        "Informatique"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l’Enseignement Supérieur Togo",
+      "Partenaires académiques internationaux (Harvard, HEC, Oxford, Yale…)"
+    ],
+    "partenariats": [
+      "Do Well Do Good",
+      "Programme Présidentiel d’Excellence",
+      "Institutions partenaires internationales"
+    ]
+  },
+  {
+    "id": "isla",
+    "informations_generales": {
+      "nom_court": "Institut Supérieur des Langues et Affaires",
+      "nom_complet": "Institut Supérieur des Langues et Affaires (ISLA)",
+      "type": "Institut",
+      "quartier": "Lomé",
+      "ville": "Lomé",
+      "contacts": {
+        "telephone": "+228 92871818",
+        "site_web": "https://islaeducation.com/fr/"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Business Management",
+        "Marketing et Communication Digitale",
+        "Tourisme et Hôtellerie",
+        "Sciences et Technologies",
+        "Licence et Master en Langues et Affaires"
+      ],
+      "domaines_etude": [
+        "Gestion",
+        "Communication"
+      ]
+    },
+    "accreditations": [
+      "Reconnu par Etat togolais",
+      "Partenariats internationaux"
+    ],
+    "partenariats": [
+      "Langcenter International",
+      "Universités en Angleterre, Canada, USA, France"
+    ]
+  },
+  {
+    "id": "ism",
+    "informations_generales": {
+      "nom_court": "Institut Supérieur de Management Adonaï",
+      "nom_complet": "Institut Supérieur de Management Adonaï (ISM Adonaï)",
+      "type": "Institut",
+      "quartier": "Non spécifié",
+      "ville": "Lomé",
+      "annee_creation": "2005",
+      "contacts": {
+        "email": "info@ismadonai.bj",
+        "site_web": "https://www.ismadonai.net"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Licence",
+        "Master"
+      ],
+      "domaines_etude": [
+        "Communication",
+        "Informatique",
+        "Gestion",
+        "Finance",
+        "Génie",
+        "Ressources Humaines",
+        "Droit"
+      ]
+    },
+    "accreditations": [
+      "Reconnu par l'État du Togo",
+      "Certification ISO 9001 version 2015",
+      "FEDE (Fédération Européenne des Écoles)"
+    ],
+    "partenariats": [
+      "Entreprises du secteur privé et public"
+    ]
+  },
+  {
+    "id": "ismad",
+    "informations_generales": {
+      "nom_court": "Institut Supérieur de Management et de Développement",
+      "nom_complet": "Institut Supérieur de Management et de Développement (ISMAD)",
+      "type": "Institut",
+      "quartier": "88",
+      "ville": "BP 80586 Lomé",
+      "annee_creation": "2002",
+      "contacts": {
+        "email": "ismadlmdcemafig@gmail.com",
+        "site_web": "https://univ-ismad.com"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Action commerciale et force de vente",
+        "Administration de réseaux locaux d'entreprise",
+        "Administration économique et sociale",
+        "Assistant administratif",
+        "Assistant de gestion des entreprises",
+        "Assurance",
+        "Assurance Finance et Banque",
+        "Audit et contrôle de gestion",
+        "Management et Administration des Entreprises",
+        "Marketing et Communication",
+        "Microfinance",
+        "Télécommunication et réseaux",
+        "Transport logistique et transit"
+      ],
+      "domaines_etude": [
+        "Informatique",
+        "Gestion",
+        "Finance",
+        "Communication"
+      ]
+    },
+    "accreditations": [
+      "CAMES",
+      "Ministère de l'Enseignement Supérieur du Togo"
+    ],
+    "partenariats": [
+      "Universités et grandes écoles en Afrique et international"
+    ]
+  },
+  {
+    "id": "issec-kouvahey",
+    "informations_generales": {
+      "nom_court": "Institut Supérieur des Sciences Économiques et Commerciales KOUVAHEY",
+      "nom_complet": "Institut Supérieur des Sciences Économiques et Commerciales KOUVAHEY (ISSEC-KOUVAHEY)",
+      "type": "Institut",
+      "quartier": "Lomé",
+      "ville": "Lomé"
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Brevet de Technicien (BT)",
+        "Secrétariat",
+        "Comptabilité",
+        "Commerce",
+        "Transport logistique et Transit",
+        "Brevet de Technicien Supérieur (BTS)",
+        "Communication des Entreprises",
+        "Assistant de Gestion PME/PMI",
+        "Commerce International",
+        "Finance-Banque",
+        "Informatique de Gestion/ Développement d’Applications",
+        "Comptabilité et gestion d’entreprise",
+        "Secrétariat de Direction ou Assistant de Direction",
+        "Télécommunications",
+        "Action commerciale et force de vente",
+        "Assurance",
+        "Assistant de Gestion des Ressources Humaines",
+        "Licence professionnelle (Bac+3)"
+      ],
+      "domaines_etude": [
+        "Gestion",
+        "Finance",
+        "Communication",
+        "Informatique",
+        "Ressources Humaines"
+      ]
+    },
+    "accreditations": [
+      "Agrément État togolais - Arrêté N°2017/075/MESR/SG/DES/ du 14 août 2017"
+    ],
+    "partenariats": [
+      "Convention IPAC-France (Bachelor, MBA)"
+    ]
+  },
+  {
+    "id": "istm",
+    "informations_generales": {
+      "nom_court": "Institut Supérieur des Technologies et de Management",
+      "nom_complet": "Institut Supérieur des Technologies et de Management (ISTM)",
+      "type": "Institut",
+      "quartier": "Lomé",
+      "ville": "Lomé"
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "BTS Comptabilité et gestion des entreprises",
+        "BTS Assistant de gestion PME/PMI",
+        "BTS Développeur d'applications",
+        "Licence Finance et banque",
+        "Licence Transport-logistique et transit",
+        "Licence Maintenance informatique",
+        "Master Administration des entreprises"
+      ],
+      "domaines_etude": [
+        "Gestion",
+        "Informatique",
+        "Finance"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l’Enseignement Supérieur et de la Recherche (Togo)"
+    ],
+    "partenariats": []
+  },
+  {
+    "id": "iut",
+    "informations_generales": {
+      "nom_court": "Institut Universitaire de Technologie de Gestion",
+      "nom_complet": "Institut Universitaire de Technologie de Gestion (IUT-Gestion)",
+      "type": "Institut",
+      "quartier": "Lomé",
+      "ville": "Lomé",
+      "contacts": {
+        "site_web": "https://univ-lome.tg/institut-universitaire-de-technologie-de-gestion-iut-de-gestion-2/"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [],
+      "domaines_etude": [
+        "Gestion"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l’Enseignement Supérieur et de la Recherche du Togo",
+      "CAMES"
+    ],
+    "partenariats": [
+      "Faculté des Sciences Economiques et de Gestion (Université de Lomé)",
+      "Entreprises locales et internationales pour stages"
+    ]
+  },
+  {
+    "id": "jumau",
+    "informations_generales": {
+      "nom_court": "Institut Supérieur des Technologies Avancées Jumau",
+      "nom_complet": "Institut Supérieur des Technologies Avancées Jumau (JUMAU-ITA)",
+      "type": "Institut",
+      "quartier": "80 rue TOTSI Av. de Pya",
+      "ville": "Lomé",
+      "annee_creation": "2010",
+      "contacts": {
+        "email": "jumauita@gmail.com",
+        "site_web": "http://www.jumau-ita.org"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Licence professionnelle en sciences agronomiques",
+        "Gestion et organisation de ressources humaines",
+        "Comptabilité"
+      ],
+      "domaines_etude": [
+        "Finance",
+        "Gestion",
+        "Ressources Humaines"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l’Enseignement Supérieur, Togo"
+    ],
+    "partenariats": []
+  },
+  {
+    "id": "lbs",
+    "informations_generales": {
+      "nom_court": "Lomé Business School",
+      "nom_complet": "Lomé Business School (LBS)",
+      "type": "Institut",
+      "quartier": "96 Boulevard Jean Paul II",
+      "ville": "Lomé",
+      "annee_creation": "2013",
+      "contacts": {
+        "site_web": "http://www.lome-bs.com"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Bachelor Management (Licence)",
+        "Bachelor Informatique (Licence)",
+        "Masters (partenariat international)"
+      ],
+      "domaines_etude": [
+        "Gestion",
+        "Finance",
+        "Ressources Humaines",
+        "Informatique"
+      ]
+    },
+    "accreditations": [
+      "Membre titulaire AUF",
+      "Reconnaissance nationale (Ministère togolais)",
+      "Classement Jeune Afrique subsaharienne"
+    ],
+    "partenariats": [
+      "Grandes écoles en France et Irlande",
+      "Entreprises locales et internationales",
+      "Partenariat I&P Accélération au Sahel (IP2E)"
+    ]
+  },
+  {
+    "id": "lucas-university",
+    "informations_generales": {
+      "nom_court": "LUCAS University College",
+      "nom_complet": "LUCAS University College",
+      "type": "Institut",
+      "quartier": "Lycée Agoè",
+      "ville": "Lomé",
+      "annee_creation": "2018",
+      "contacts": {
+        "site_web": "http://www.lucas-universities-colleges.net"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "BTS Sciences de Gestion",
+        "Licence en Management et Gestion",
+        "Licence Informatique et Digital",
+        "Master Sciences de Gestion",
+        "Master Informatique et Réseaux"
+      ],
+      "domaines_etude": [
+        "Gestion",
+        "Informatique",
+        "Finance",
+        "Ressources Humaines",
+        "Communication"
+      ]
+    },
+    "accreditations": [
+      "Ministère de l'Enseignement Supérieur du Togo",
+      "CAMES"
+    ],
+    "partenariats": [
+      "MBway (France)",
+      "My Digital School (France)",
+      "Griffith College (Irlande)"
+    ]
+  },
+  {
+    "id": "paris",
+    "informations_generales": {
+      "nom_court": "Upsilon Collège de Paris",
+      "nom_complet": "Upsilon Collège de Paris",
+      "type": "Institut",
+      "quartier": "Siège à Paris",
+      "ville": "présence à Lomé",
+      "contacts": {
+        "site_web": "https://upsilon.education"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [],
+      "domaines_etude": [
+        "Ressources Humaines",
+        "Gestion"
+      ]
+    },
+    "accreditations": [
+      "Titres enregistrés au Répertoire National des Certifications Professionnelles (RNCP)",
+      "Commission Nationale de la Certification Professionnelle",
+      "Membre Ed Tech France",
+      "Membre Fédération Française de la Formation Professionnelle (FFP)"
+    ],
+    "partenariats": [
+      "Ascencia Business School",
+      "ECEMA",
+      "Brest Business School",
+      "Collège de Paris"
+    ]
+  },
+  {
+    "id": "ucao",
+    "informations_generales": {
+      "nom_court": "Université Catholique de l'Afrique de l'Ouest",
+      "nom_complet": "Université Catholique de l'Afrique de l'Ouest (UCAO-UUT)",
+      "type": "Université",
+      "quartier": "Sanguéra",
+      "ville": "Lomé",
+      "contacts": {
+        "email": "scolarite@ucao-uut.tg",
+        "telephone": "(00 228) 96 80 31 67",
+        "site_web": "https://ucao-uut.tg"
+      }
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Licence en Droit Privé",
+        "Licence en Économie appliquée",
+        "Licence en Développement d'applications",
+        "Master en Communication Publique et Politique",
+        "Master en Sciences de l'Éducation"
+      ],
+      "domaines_etude": [
+        "Droit",
+        "Communication"
+      ]
+    },
+    "accreditations": [
+      "CAMES (Conseil Africain et Malgache pour l'Enseignement Supérieur)",
+      "AUF (Agence Universitaire de la Francophonie)"
+    ],
+    "partenariats": [
+      "Université de Lomé",
+      "Université Nazi Boni (Burkina Faso)",
+      "Université du Québec en Outaouais (Canada)",
+      "George Mason University (USA)",
+      "Galilee International Management Institute (Israël)",
+      "MED’SUP (Gabon)",
+      "Institut National Polytechnique F. Houphouët-Boigny (Côte d'Ivoire)"
+    ]
+  },
+  {
+    "id": "village-du-benin",
+    "informations_generales": {
+      "nom_court": "Centre International de Recherche et d’Études de Langue",
+      "nom_complet": "Centre International de Recherche et d’Études de Langue (Village du Bénin)",
+      "type": "Centre de formation",
+      "quartier": "Lomé",
+      "ville": "Lomé"
+    },
+    "programmes": {
+      "diplomes_proposes": [
+        "Licence en Langues étrangères"
+      ],
+      "domaines_etude": []
+    },
+    "accreditations": [
+      "Ministère de la Culture et de l’Éducation"
+    ],
+    "partenariats": []
+  }
+]
