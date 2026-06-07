@@ -1,15 +1,11 @@
 """Tâche Celery de vérification des périodes d'inscription.
 
-TODO(dev1): enregistrer cette tâche dans celery_app.py avec Celery Beat ::
+Enregistrée dans ``celery_app.py`` :
+  - ``include`` → la tâche est découverte par les workers,
+  - ``task_routes`` → routée vers la queue ``webhooks``,
+  - ``beat_schedule`` → exécutée chaque jour à 06h00 UTC par Celery Beat.
 
-    from celery.schedules import crontab
-
-    app.conf.beat_schedule = {
-        "check-enrollment-periods-daily": {
-            "task": "app.workers.enrollment_tasks.check_enrollment_periods",
-            "schedule": crontab(hour=6, minute=0),  # tous les jours a 6h00
-        },
-    }
+Lancer le planificateur avec : ``celery -A app.workers.celery_app beat``.
 """
 import logging
 from datetime import date

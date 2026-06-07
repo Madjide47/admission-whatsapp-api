@@ -16,7 +16,7 @@ from twilio.rest import Client as TwilioClient
 from app.config import settings
 from app.models.application import Application, ApplicationStatus
 from app.models.document import DocumentType
-from app.models.program import Program  # stub — TODO(dev1): migration 0002
+from app.models.program import Program
 from app.models.university import University
 
 logger = logging.getLogger(__name__)

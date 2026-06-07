@@ -4,10 +4,15 @@ Trois queues distinctes :
   - ocr       : extraction OCR (Tesseract), CPU-bound
   - ai        : classification IA (Claude API), I/O-bound
   - webhooks  : envoi webhooks signés vers universités
+
+Tâche périodique (Celery Beat) :
+  - enrollment_tasks.check_enrollment_periods : balaie chaque jour les
+    candidatures PENDING_ENROLLMENT dont la période d'inscription vient d'ouvrir.
 """
 import logging
 
 from celery import Celery
+from celery.schedules import crontab
 from celery.signals import setup_logging
 
 from app.config import settings
@@ -31,6 +36,7 @@ celery_app = Celery(
         "app.workers.ocr_tasks",
         "app.workers.ai_tasks",
         "app.workers.webhook_tasks",
+        "app.workers.enrollment_tasks",
     ],
 )
 
@@ -51,5 +57,15 @@ celery_app.conf.update(
         "app.workers.ocr_tasks.*": {"queue": "ocr"},
         "app.workers.ai_tasks.*": {"queue": "ai"},
         "app.workers.webhook_tasks.*": {"queue": "webhooks"},
+        # La tâche d'inscription orchestre l'envoi des dossiers → queue webhooks
+        "app.workers.enrollment_tasks.*": {"queue": "webhooks"},
+    },
+    # Planification périodique (Celery Beat) — lancer avec :
+    #   celery -A app.workers.celery_app beat
+    beat_schedule={
+        "check-enrollment-periods-daily": {
+            "task": "app.workers.enrollment_tasks.check_enrollment_periods",
+            "schedule": crontab(hour=6, minute=0),  # tous les jours à 06h00 UTC
+        },
     },
 )

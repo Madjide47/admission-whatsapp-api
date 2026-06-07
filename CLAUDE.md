@@ -53,7 +53,7 @@ Les universités intègrent notre API dans leur plateforme existante. Les étudi
 | File d'attente | Celery 5+ | 3 files séparées, retry natif |
 | Broker / Cache | Redis 7+ | Broker Celery + rate limiting |
 | OCR | Tesseract 5+ (pytesseract) | Gratuit, supporte fra+eng |
-| Classification IA | Anthropic Claude | Prompt structuré, sortie JSON |
+| Classification IA | Anthropic Claude **ou** Google Gemini (`AI_PROVIDER`) | Prompt structuré, sortie JSON. Défaut `anthropic` ; `gemini` (2.5-flash) pour le quota gratuit |
 | WhatsApp | Twilio WhatsApp API | Fiable, bac à sable gratuit |
 | Stockage fichiers | Google Cloud Storage | URLs signées temporaires |
 | Base de données | PostgreSQL 15+ | JSONB, UUID, enum natifs |
@@ -808,8 +808,8 @@ accept_content = ["json"]
 - [x] `INTEGRATION.md` mis à jour (endpoints admin opérationnels)
 
 ### Phase 4 — Finalisation
-- [ ] Mettre à jour diagrammes séquences / cas d'utilisation v2
-- [ ] Cahier des charges technique v2
+- [x] Mettre à jour diagrammes séquences / cas d'utilisation v2 (`docs/ARCHITECTURE_V2.md`)
+- [x] Cahier des charges technique v2 (`docs/ARCHITECTURE_V2.md` §6)
 
 ### Dépendances Dev 3
 

@@ -1,27 +1,36 @@
-# Dépendances Dev 1 — migrations & infra à livrer
+# Dépendances Dev 1 — migrations & infra
 
 > Recense ce que le code v2 (modèles Dev 1 + feature enrollment Dev 2) attend
 > côté **migrations Alembic** et **Celery Beat**. En SQLite (tests) tout marche
-> via `Base.metadata.create_all`. En **PostgreSQL (prod), rien ne démarrera**
-> tant que les migrations ci-dessous ne sont pas écrites.
+> via `Base.metadata.create_all` ; ce document concerne le démarrage **PostgreSQL (prod)**.
+>
+> **État au 2026-06-07 : migrations et Celery Beat livrés.** Les points
+> historiquement bloquants sont résolus ; seul subsiste un item optionnel
+> (`external_id` pour l'idempotence de l'import Boussole).
 
 ---
 
-## 1. Migrations Alembic manquantes
+## 1. Migrations Alembic — ✅ complètes
 
-Seule `0001_initial_schema.py` existe. Les tables v2 (créées comme modèles mais
-**pas** comme migrations) doivent être ajoutées :
+| Migration | Tables / changements | État |
+|-----------|----------------------|------|
+| `0001_initial_schema` | `universities`, `applications`, `documents`, `webhook_deliveries` (+ enums) | ✅ |
+| `0002_v2_dynamic_forms` | `programs` (avec `enrollment_start`/`enrollment_end`), `admission_forms`, `form_fields`, `required_documents`, `application_field_values`, FK `applications.program_id`, **et** valeurs d'enum v2 dont `PENDING_ENROLLMENT` | ✅ |
 
-| Migration | Tables / changements | Origine |
-|-----------|----------------------|---------|
-| `0002_dynamic_forms` | `programs`, `admission_forms`, `form_fields`, `required_documents`, `application_field_values` + FK `applications.program_id` | Dev 1 |
-| `0003_enrollment` | colonnes `programs.enrollment_start` (DATE), `programs.enrollment_end` (DATE) | **Dev 2 (enrollment)** |
-| `0004_pending_enrollment` | `ALTER TYPE application_status_enum ADD VALUE 'PENDING_ENROLLMENT'` | **Dev 2 (enrollment)** |
-| (idem) | `external_id` sur `universities` + `programs` si import Boussole idempotent | Dev 1 |
+> La migration `0002` couvre **à la fois** les formulaires dynamiques (Dev 1) et la
+> feature « périodes d'inscription » de Dev 2 (colonnes DATE + statut
+> `PENDING_ENROLLMENT`). Les migrations séparées `0003`/`0004` envisagées
+> initialement sont donc **inutiles**.
+>
+> ⚠️ PostgreSQL : `ADD VALUE` sur un enum est fait via
+> `op.execute("ALTER TYPE ... ADD VALUE IF NOT EXISTS ...")` (PG 12+ supporte
+> ça dans une transaction — cible projet : PG 15+). Voir `0002` lignes 39-42.
 
-> ⚠️ PostgreSQL : `ADD VALUE` sur un enum ne peut pas tourner dans une transaction.
-> Utiliser `op.execute("ALTER TYPE ... ADD VALUE IF NOT EXISTS ...")` hors bloc
-> transactionnel (ou `COMMIT` explicite).
+### Reste optionnel
+- [ ] `external_id` sur `universities` + `programs` — **non implémenté** (ni modèle,
+      ni migration). Utile seulement pour rendre l'import Boussole *idempotent*
+      (ré-import sans doublon). Aujourd'hui l'import suppose une base vierge.
+      À ajouter si on veut des ré-imports incrémentaux.
 
 ---
 
@@ -29,9 +38,9 @@ Seule `0001_initial_schema.py` existe. Les tables v2 (créées comme modèles ma
 
 Ajouts faits par Dev 2 sur les modèles **canoniques de Dev 1** :
 
-- `Program.enrollment_start` / `enrollment_end` (DATE, null = pas de borne)
+- `Program.enrollment_start` / `enrollment_end` (DATE, null = pas de borne) — migration `0002`
 - `Program.is_enrollment_open(reference_date=None)` — méthode métier
-- `ApplicationStatus.PENDING_ENROLLMENT` — nouveau statut
+- `ApplicationStatus.PENDING_ENROLLMENT` — statut (enum, migration `0002`)
 - `ConversationState.AWAITING_ENROLLMENT_CHOICE` — état bot (colonne `conversation_state`, pas de migration)
 
 Comportement :
@@ -44,33 +53,34 @@ Comportement :
 
 ---
 
-## 3. Celery Beat — tâche planifiée
+## 3. Celery Beat — ✅ enregistré
 
-`app/workers/enrollment_tasks.py::check_enrollment_periods_task` doit être
-enregistrée dans `app/workers/celery_app.py` (Dev 1) :
+`app/workers/enrollment_tasks.py::check_enrollment_periods_task` est désormais :
+
+- déclarée dans `include=[...]` de `celery_app` (découverte par les workers),
+- routée vers la queue `webhooks` via `task_routes`,
+- planifiée dans `beat_schedule` (chaque jour à 06h00 UTC).
 
 ```python
-from celery.schedules import crontab
-
-app.conf.beat_schedule = {
+# app/workers/celery_app.py
+beat_schedule={
     "check-enrollment-periods-daily": {
         "task": "app.workers.enrollment_tasks.check_enrollment_periods",
-        "schedule": crontab(hour=6, minute=0),  # tous les jours à 6h00
+        "schedule": crontab(hour=6, minute=0),
     },
 }
 ```
 
-Le service `worker-beat` existe déjà dans `docker-compose.yml`. Sans cette config,
-les candidatures `PENDING_ENROLLMENT` ne partent pas automatiquement (workaround :
-lancer la tâche à la main).
+Lancer le planificateur : `celery -A app.workers.celery_app beat`
+(le service `worker-beat` de `docker-compose.yml` doit exécuter cette commande).
 
 ---
 
 ## 4. Checklist de mise en production Dev 1
 
-- [ ] Migration `0002` : tables formulaires dynamiques + `applications.program_id`
-- [ ] Migration `0003` : `programs.enrollment_start` / `enrollment_end`
-- [ ] Migration `0004` : `PENDING_ENROLLMENT` dans `application_status_enum`
-- [ ] `external_id` (universities, programs) pour idempotence import Boussole
-- [ ] Enregistrer `check_enrollment_periods` dans `celery_app.beat_schedule`
+- [x] Migration `0002` : tables formulaires dynamiques + `applications.program_id`
+- [x] `programs.enrollment_start` / `enrollment_end` (dans `0002`)
+- [x] `PENDING_ENROLLMENT` dans `application_status_enum` (dans `0002`)
+- [x] Enregistrer `check_enrollment_periods` dans `celery_app.beat_schedule`
+- [ ] `external_id` (universities, programs) pour idempotence import Boussole — *optionnel*
 - [ ] Seeder programmes (avec `domain` + dates d'inscription) par université
