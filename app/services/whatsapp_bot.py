@@ -16,7 +16,8 @@ from twilio.rest import Client as TwilioClient
 from app.config import settings
 from app.models.application import Application, ApplicationStatus
 from app.models.document import DocumentType
-from app.models.program import Program
+from app.models.form_field_value import ApplicationFieldValue
+from app.models.program import FormField, Program
 from app.models.university import University
 
 logger = logging.getLogger(__name__)
@@ -31,6 +32,7 @@ class ConversationState(str, Enum):
     COLLECT_NAME = "COLLECT_NAME"
     CHOOSE_PROGRAM = "CHOOSE_PROGRAM"         # v2 : sélection programme depuis une liste
     COLLECT_PROGRAM = "COLLECT_PROGRAM"       # fallback texte libre (pas de programmes configurés)
+    COLLECT_FIELDS = "COLLECT_FIELDS"         # v2 : saisie des champs dynamiques du formulaire
     AWAITING_ENROLLMENT_CHOICE = "AWAITING_ENROLLMENT_CHOICE"  # v2 : inscriptions fermées, choix étudiant
     COLLECT_DOCS = "COLLECT_DOCS"
     WAITING_VALIDATION = "WAITING_VALIDATION"
@@ -171,6 +173,7 @@ class WhatsAppBot:
             ConversationState.CHOOSE_PROGRAM: self._handle_choose_program,
             ConversationState.COLLECT_PROGRAM: self._handle_collect_program,
             ConversationState.AWAITING_ENROLLMENT_CHOICE: self._handle_awaiting_enrollment_choice,
+            ConversationState.COLLECT_FIELDS: self._handle_collect_fields,
             ConversationState.COLLECT_DOCS: self._handle_collect_docs,
             ConversationState.WAITING_VALIDATION: self._handle_waiting,
             ConversationState.DONE: self._handle_done,
@@ -243,6 +246,10 @@ class WhatsAppBot:
             ConversationState.COLLECT_PROGRAM: (
                 "Tapez le nom du programme visé.\n"
                 "Exemple : *Licence Informatique*, *Master Droit des Affaires*"
+            ),
+            ConversationState.COLLECT_FIELDS: (
+                "Répondez par un texte à la question posée.\n"
+                "Chaque réponse fait avancer votre dossier."
             ),
             ConversationState.COLLECT_DOCS: (
                 "Envoyez vos documents *en photo ou PDF* directement ici.\n"
@@ -485,17 +492,9 @@ class WhatsAppBot:
         if not chosen.is_enrollment_open():
             return self._propose_enrollment_choice(application, chosen)
 
-        application.conversation_state = ConversationState.COLLECT_DOCS.value
-        self.db.add(application)
-        self.db.commit()
-        first_label = DOCUMENT_LABELS[REQUIRED_DOCUMENT_TYPES_ORDERED[0]]
-        self.send_message(
-            application.student_phone,
-            f"✅ Programme *{chosen.name}* sélectionné !\n\n"
-            f"Envoyez vos documents un par un. Commençons par {first_label}.\n\n"
-            "📎 En photo ou PDF directement dans cette conversation.",
+        return self._begin_collection(
+            application, f"✅ Programme *{chosen.name}* sélectionné !"
         )
-        return {"state": application.conversation_state, "action": "asked_documents"}
 
     def _propose_enrollment_choice(self, application: Application, program: "Program") -> dict:
         """Inscriptions fermées pour ce programme — présente 2 options à l'étudiant."""
@@ -550,22 +549,11 @@ class WhatsAppBot:
             )
             return {"state": ConversationState.WELCOME.value, "action": "enrollment_deferred"}
 
-        # Option 2 : dépôt immédiat — collecte des documents, envoi différé
-        application.conversation_state = ConversationState.COLLECT_DOCS.value
-        self.db.add(application)
-        self.db.commit()
-
-        required = self._get_required_doc_types(application)
-        first_doc = required[0] if required else REQUIRED_DOCUMENT_TYPES_ORDERED[0]
-        first_label = DOCUMENT_LABELS.get(first_doc, "un premier document")
-
-        self.send_message(
-            application.student_phone,
-            "✅ Votre candidature sera transmise à l'université dès l'ouverture des inscriptions.\n\n"
-            f"Constituons votre dossier dès maintenant. Commençons par {first_label}.\n\n"
-            "📎 Envoyez-le en photo ou PDF directement dans cette conversation.",
+        # Option 2 : dépôt immédiat — champs puis documents, envoi différé
+        return self._begin_collection(
+            application,
+            "✅ Votre candidature sera transmise à l'université dès l'ouverture des inscriptions.",
         )
-        return {"state": application.conversation_state, "action": "enrollment_pending_accepted"}
 
     def _handle_collect_program(self, application: Application, text: str) -> dict:
         error = self._validate_program_text(text)
@@ -574,20 +562,118 @@ class WhatsAppBot:
             return {"state": application.conversation_state, "action": "program_invalid"}
 
         application.program = text.strip()[:150]
+        return self._begin_collection(application, "Parfait ! 📄")
+
+    def _begin_collection(self, application: Application, intro: str) -> dict:
+        """Après sélection du programme : champs dynamiques d'abord s'il y en a,
+        sinon directement les documents. ``intro`` = message de confirmation."""
+        fields = self._get_required_fields(application)
+        first_field = self._next_unanswered_field(application, fields)
+        if first_field is not None:
+            application.conversation_state = ConversationState.COLLECT_FIELDS.value
+            self.db.add(application)
+            self.db.commit()
+            self.send_message(
+                application.student_phone,
+                f"{intro}\n\nQuelques informations à compléter d'abord. 📝\n\n"
+                f"{self._field_question(first_field)}",
+            )
+            return {"state": application.conversation_state, "action": "asked_field"}
+        return self._begin_documents(application, intro)
+
+    def _begin_documents(self, application: Application, intro: str | None = None) -> dict:
+        """Passe à la collecte des documents et demande le premier."""
         application.conversation_state = ConversationState.COLLECT_DOCS.value
         self.db.add(application)
         self.db.commit()
-
-        first_doc = REQUIRED_DOCUMENT_TYPES_ORDERED[0]
-        first_label = DOCUMENT_LABELS[first_doc]
+        required = self._get_required_doc_types(application)
+        first_doc = required[0] if required else REQUIRED_DOCUMENT_TYPES_ORDERED[0]
+        first_label = DOCUMENT_LABELS.get(first_doc, "un premier document")
+        prefix = f"{intro}\n\n" if intro else ""
         self.send_message(
             application.student_phone,
-            f"Parfait ! Je vais maintenant vous demander vos documents *un par un*. 📄\n\n"
-            f"Commençons par {first_label}.\n\n"
-            "📎 Envoyez-le en photo ou PDF directement dans cette conversation.\n"
+            f"{prefix}Envoyez vos documents un par un. Commençons par {first_label}.\n\n"
+            "📎 En photo ou PDF directement dans cette conversation.\n"
             "Tapez *statut* à tout moment pour voir où vous en êtes.",
         )
         return {"state": application.conversation_state, "action": "asked_documents"}
+
+    def _handle_collect_fields(self, application: Application, text: str) -> dict:
+        """Collecte les réponses aux champs dynamiques du formulaire, un par un."""
+        fields = self._get_required_fields(application)
+        current = self._next_unanswered_field(application, fields)
+        if current is None:
+            # Plus aucun champ en attente → on passe aux documents
+            return self._begin_documents(application, "✅ Informations enregistrées !")
+
+        value = (text or "").strip()
+        if not value:
+            self.send_message(
+                application.student_phone,
+                f"❌ Merci de répondre à la question.\n\n{self._field_question(current)}",
+            )
+            return {"state": application.conversation_state, "action": "field_empty"}
+
+        if current.validation_regex:
+            try:
+                if re.fullmatch(current.validation_regex, value) is None:
+                    self.send_message(
+                        application.student_phone,
+                        f"❌ La réponse ne semble pas valide pour *{current.label}*.\n\n"
+                        f"{self._field_question(current)}",
+                    )
+                    return {"state": application.conversation_state, "action": "field_invalid"}
+            except re.error:
+                logger.warning("validation_regex invalide pour le champ %s", current.id)
+
+        self.db.add(
+            ApplicationFieldValue(
+                application_id=application.id,
+                field_id=current.id,
+                value=value[:2000],
+            )
+        )
+        self.db.commit()
+
+        nxt = self._next_unanswered_field(application, fields)
+        if nxt is not None:
+            self.send_message(
+                application.student_phone,
+                f"✅ Enregistré.\n\n{self._field_question(nxt)}",
+            )
+            return {"state": application.conversation_state, "action": "asked_field"}
+
+        return self._begin_documents(
+            application, "✅ Merci, toutes les informations sont enregistrées !"
+        )
+
+    def _get_required_fields(self, application: Application) -> list[FormField]:
+        """Champs requis du formulaire publié du programme (vide si aucun)."""
+        from app.services.validator import ApplicationValidator
+
+        return ApplicationValidator(self.db).get_required_fields(application)
+
+    def _answered_field_ids(self, application: Application) -> set:
+        return set(
+            self.db.execute(
+                select(ApplicationFieldValue.field_id).where(
+                    ApplicationFieldValue.application_id == application.id
+                )
+            ).scalars().all()
+        )
+
+    def _next_unanswered_field(
+        self, application: Application, fields: list[FormField]
+    ) -> FormField | None:
+        answered = self._answered_field_ids(application)
+        for f in fields:
+            if f.id not in answered:
+                return f
+        return None
+
+    @staticmethod
+    def _field_question(field: FormField) -> str:
+        return f"📝 {field.label}"
 
     def _handle_collect_docs(self, application: Application, text: str) -> dict:
         # On rappelle le prochain document spécifique attendu

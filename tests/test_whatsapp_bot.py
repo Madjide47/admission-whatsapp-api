@@ -882,3 +882,100 @@ def test_send_whatsapp_twilio_error_returns_none(monkeypatch):
         mock_client.messages.create.side_effect = raise_twilio
         result = send_whatsapp("+22890000001", "Test")
     assert result is None
+
+
+# ---------------------------------------------------------------------------
+# Champs dynamiques (formulaire configuré par l'université)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+def program_with_fields(db_session, university):
+    """Programme avec un formulaire publié : 2 champs requis (dont un avec regex)
+    + 1 document requis."""
+    from app.models.program import AdmissionForm, FormField, RequiredDocument
+
+    prog = Program(
+        id=uuid.uuid4(), university_id=university.id,
+        name="Master Test", domain="Informatique", is_active=True,
+    )
+    db_session.add(prog)
+    db_session.flush()
+    form = AdmissionForm(id=uuid.uuid4(), program_id=prog.id, is_published=True)
+    db_session.add(form)
+    db_session.flush()
+    db_session.add(FormField(
+        id=uuid.uuid4(), form_id=form.id, label="Date de naissance (JJ/MM/AAAA)",
+        field_type="text", order=0, is_required=True, validation_regex=r"\d{2}/\d{2}/\d{4}",
+    ))
+    db_session.add(FormField(
+        id=uuid.uuid4(), form_id=form.id, label="Adresse",
+        field_type="text", order=1, is_required=True, validation_regex=None,
+    ))
+    db_session.add(RequiredDocument(
+        id=uuid.uuid4(), form_id=form.id, document_type="DIPLOME",
+        label="Diplôme", order=0, is_required=True,
+    ))
+    db_session.commit()
+    return prog
+
+
+def test_bot_collects_dynamic_fields(db_session, bot, university, program_with_fields):
+    """Choix du programme → collecte des champs un par un (avec regex) → documents."""
+    phone = "+22890000010"
+    app = Application(
+        id=uuid.uuid4(), university_id=university.id, student_phone=phone,
+        student_name="Test User", status=ApplicationStatus.CHOOSING_PROGRAM,
+        conversation_state=ConversationState.CHOOSE_PROGRAM.value,
+    )
+    db_session.add(app)
+    db_session.commit()
+
+    # Choix du programme (le seul) → passe à la collecte des champs
+    bot.handle_incoming_message(f"whatsapp:{phone}", "1")
+    db_session.refresh(app)
+    assert app.conversation_state == ConversationState.COLLECT_FIELDS.value
+
+    # Réponse invalide au 1er champ (regex date) → reste en COLLECT_FIELDS, rien sauvé
+    bot.handle_incoming_message(f"whatsapp:{phone}", "n importe quoi")
+    db_session.refresh(app)
+    assert app.conversation_state == ConversationState.COLLECT_FIELDS.value
+    assert len(app.field_values) == 0
+
+    # Réponse valide → sauvegardée, passe au champ suivant
+    bot.handle_incoming_message(f"whatsapp:{phone}", "14/08/1999")
+    db_session.refresh(app)
+    assert app.conversation_state == ConversationState.COLLECT_FIELDS.value
+    assert len(app.field_values) == 1
+
+    # Dernier champ rempli → passe aux documents
+    bot.handle_incoming_message(f"whatsapp:{phone}", "Lome, Togo")
+    db_session.refresh(app)
+    assert app.conversation_state == ConversationState.COLLECT_DOCS.value
+    assert len(app.field_values) == 2
+    saved = {fv.value for fv in app.field_values}
+    assert saved == {"14/08/1999", "Lome, Togo"}
+
+
+def test_bot_skips_fields_without_published_form(db_session, bot, university):
+    """Programme sans formulaire publié → on saute directement aux documents."""
+    prog = Program(
+        id=uuid.uuid4(), university_id=university.id,
+        name="Prog Sans Formulaire", is_active=True,
+    )
+    db_session.add(prog)
+    db_session.commit()
+
+    phone = "+22890000011"
+    app = Application(
+        id=uuid.uuid4(), university_id=university.id, student_phone=phone,
+        student_name="Test", status=ApplicationStatus.CHOOSING_PROGRAM,
+        conversation_state=ConversationState.CHOOSE_PROGRAM.value,
+    )
+    db_session.add(app)
+    db_session.commit()
+
+    bot.handle_incoming_message(f"whatsapp:{phone}", "1")
+    db_session.refresh(app)
+    assert app.conversation_state == ConversationState.COLLECT_DOCS.value
+    assert len(app.field_values) == 0

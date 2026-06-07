@@ -233,7 +233,9 @@ def test_enrollment_choice_2_accepts(bot, application, university, db_session):
     db_session.refresh(application)
 
     assert application.conversation_state == ConversationState.COLLECT_DOCS.value
-    assert result["action"] == "enrollment_pending_accepted"
+    # Le dépôt différé passe désormais par _begin_collection (champs → documents).
+    # Sans formulaire publié pour ce programme, on va directement aux documents.
+    assert result["action"] in ("asked_documents", "asked_field")
     body = bot._mock_twilio.messages.create.call_args.kwargs["body"]
     assert "ouverture" in body.lower()
 

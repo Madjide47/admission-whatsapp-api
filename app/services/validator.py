@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.models.application import Application, ApplicationStatus
 from app.models.document import Document, DocumentType
-from app.models.program import AdmissionForm, Program, RequiredDocument
+from app.models.program import AdmissionForm, FormField, Program, RequiredDocument
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +121,60 @@ class ApplicationValidator:
         Utilisable par le bot et les workers pour connaître l'ordre de demande.
         """
         return self._load_required_doc_types(application)
+
+    def get_required_fields(self, application: Application) -> list[FormField]:
+        """Champs (FormField) requis du formulaire publié du programme, ordonnés.
+
+        Vide s'il n'y a pas de formulaire publié ou aucun champ requis configuré
+        (le bot saute alors l'étape « questions »).
+        """
+        form = self._get_published_form(application)
+        if form is None:
+            return []
+        try:
+            return list(
+                self.db.execute(
+                    select(FormField)
+                    .where(
+                        FormField.form_id == form.id,
+                        FormField.is_required.is_(True),
+                    )
+                    .order_by(FormField.order, FormField.label)
+                ).scalars().all()
+            )
+        except Exception:
+            logger.warning(
+                "Erreur chargement form_fields pour app %s", application.id, exc_info=True
+            )
+            return []
+
+    def _get_published_form(self, application: Application) -> AdmissionForm | None:
+        """Formulaire publié du programme de l'application (ou None)."""
+        if not application.program or not application.university_id:
+            return None
+        try:
+            program = self.db.execute(
+                select(Program).where(
+                    Program.university_id == application.university_id,
+                    Program.name == application.program,
+                    Program.is_active.is_(True),
+                )
+            ).scalar_one_or_none()
+            if program is None:
+                return None
+            return self.db.execute(
+                select(AdmissionForm)
+                .where(
+                    AdmissionForm.program_id == program.id,
+                    AdmissionForm.is_published.is_(True),
+                )
+                .order_by(AdmissionForm.published_at.desc())
+            ).scalar_one_or_none()
+        except Exception:
+            logger.warning(
+                "Erreur recherche formulaire publié pour app %s", application.id, exc_info=True
+            )
+            return None
 
     # ------------------------------------------------------------------
     # Chargement dynamique
