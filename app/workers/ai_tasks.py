@@ -11,6 +11,7 @@ from app.models.application import Application, ApplicationStatus
 from app.models.document import Document, DocumentType
 from app.models.program import Program
 from app.services.ai_classifier import get_ai_classifier
+from app.services.storage_service import get_storage_service
 from app.services.validator import ApplicationValidator
 from app.services.whatsapp_bot import DOCUMENT_LABELS, get_next_required_document, send_whatsapp
 
@@ -19,15 +20,19 @@ logger = logging.getLogger(__name__)
 
 def _send_document_feedback(
     application: Application,
-    doc_type: DocumentType,
+    detected_type: DocumentType,
+    awaited_type: DocumentType | None,
     is_valid: bool,
     errors: list[str],
 ) -> None:
-    """Envoie un message WhatsApp à l'étudiant après classification d'un document."""
-    label = DOCUMENT_LABELS.get(doc_type, doc_type.value).replace("*", "")
-    label_cap = label.strip().capitalize()
+    """Envoie un message WhatsApp à l'étudiant après classification d'un document.
 
+    - is_valid : le document est du bon type ET exploitable → confirmation + doc suivant.
+    - mauvais type (detected_type != awaited_type) → on explique qu'on attendait autre chose.
+    - bon type mais illisible/incomplet → on demande de renvoyer plus net.
+    """
     if is_valid:
+        label_cap = DOCUMENT_LABELS.get(detected_type, detected_type.value).replace("*", "").strip().capitalize()
         db_fresh = get_db_session()
         try:
             fresh_app = db_fresh.get(Application, application.id)
@@ -36,11 +41,18 @@ def _send_document_feedback(
             db_fresh.close()
 
         if next_doc:
-            next_label = DOCUMENT_LABELS[next_doc]
-            msg = f"✅ {label_cap} validé !\n\nEnvoyez maintenant {next_label}."
+            msg = f"✅ {label_cap} validé !\n\nEnvoyez maintenant {DOCUMENT_LABELS[next_doc]}."
         else:
             msg = f"✅ {label_cap} validé ! Tous vos documents sont reçus, validation finale en cours..."
+    elif awaited_type is not None and detected_type != awaited_type:
+        awaited_label = DOCUMENT_LABELS.get(awaited_type, awaited_type.value)
+        msg = (
+            f"❌ Ce document ne correspond pas à ce qui est demandé.\n\n"
+            f"Merci d'envoyer {awaited_label}."
+        )
     else:
+        awaited_label = DOCUMENT_LABELS.get(awaited_type, awaited_type.value) if awaited_type else ""
+        label_cap = (awaited_label or DOCUMENT_LABELS.get(detected_type, detected_type.value)).replace("*", "").strip().capitalize()
         errors_str = "\n• ".join(errors) if errors else "Document illisible ou incomplet"
         msg = (
             f"❌ {label_cap} non valide :\n• {errors_str}\n\n"
@@ -65,25 +77,66 @@ def classify_document_task(self, document_id: str) -> str:
             logger.error("Document introuvable: %s", document_id)
             return "no_document"
 
+        application = db.get(Application, document.application_id)
+
+        # Type attendu à cette étape : l'indice de légende s'il existe, sinon
+        # le prochain document requis dans l'ordre de collecte. On ne passe que
+        # l'indice explicite au modèle (pour ne PAS le biaiser et lui faire
+        # valider une image quelconque comme « diplôme »).
+        hinted = document.document_type if document.document_type != DocumentType.AUTRE else None
+        awaited = hinted or (get_next_required_document(application) if application else None)
+
         classifier = get_ai_classifier()
-        result = classifier.classify(
-            ocr_text=document.ocr_text or "",
-            expected_type=document.document_type if document.document_type != DocumentType.AUTRE else None,
-        )
+        mime = (document.mime_type or "").lower()
+        result = None
+
+        # Pour une image, on envoie la VRAIE image à l'IA (vision) : seul moyen
+        # de valider une photo d'identité (sans texte) et plus fiable que l'OCR.
+        if mime.startswith("image/"):
+            try:
+                image_bytes = get_storage_service().download_to_bytes(document.gcs_path)
+                result = classifier.classify_image(
+                    image_bytes=image_bytes,
+                    mime_type=document.mime_type,
+                    ocr_text=document.ocr_text or "",
+                    expected_type=hinted,
+                )
+            except Exception:
+                logger.warning(
+                    "Analyse vision indisponible pour %s — repli sur le texte OCR",
+                    document_id,
+                    exc_info=True,
+                )
+
+        # PDF, ou repli si la vision a échoué : classification basée sur le texte OCR.
+        if result is None:
+            result = classifier.classify(
+                ocr_text=document.ocr_text or "",
+                expected_type=hinted,
+            )
+
+        # Le document doit être du type attendu. Sinon (ex : photo random envoyée
+        # à la place du diplôme), on le refuse pour cette étape.
+        type_ok = awaited is None or result.type == awaited
+        is_valid = result.is_valid and type_ok
+
+        errors = list(result.errors or [])
+        if not type_ok:
+            awaited_label = DOCUMENT_LABELS.get(awaited, awaited.value).replace("*", "").strip()
+            errors = [f"Document attendu : {awaited_label} (type détecté : {result.type.value})."] + errors
 
         document.document_type = result.type
         document.classification_result = result.model_dump(mode="json")
-        document.is_valid = result.is_valid
-        document.validation_errors = result.errors if result.errors else None
+        document.is_valid = is_valid
+        document.validation_errors = errors if errors else None
         db.add(document)
         db.commit()
         db.refresh(document)
 
         # Feedback WhatsApp immédiat sur ce document
         try:
-            application = db.get(Application, document.application_id)
             if application:
-                _send_document_feedback(application, result.type, result.is_valid, result.errors)
+                _send_document_feedback(application, result.type, awaited, is_valid, errors)
         except Exception:
             logger.warning("Impossible d'envoyer le feedback WhatsApp post-classification", exc_info=True)
 

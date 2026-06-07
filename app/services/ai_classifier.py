@@ -20,8 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 SYSTEM_PROMPT = """Tu es un assistant d'admission universitaire. Ton rôle est de \
-classifier des documents fournis par des candidats à partir du texte extrait par OCR \
-et d'en vérifier la complétude.
+classifier des documents fournis par des candidats et d'en vérifier la complétude. \
+Tu reçois soit l'image du document, soit son texte extrait par OCR, parfois les deux.
 
 Tu réponds UNIQUEMENT en JSON valide, sans aucun texte avant ou après, selon ce schéma :
 
@@ -39,16 +39,18 @@ Tu réponds UNIQUEMENT en JSON valide, sans aucun texte avant ou après, selon c
 }
 
 Règles :
-- DIPLOME : doit contenir nom de l'étudiant, intitulé du diplôme, date d'obtention, \
-établissement émetteur.
-- RELEVE_NOTES : doit contenir nom, période/année, liste de notes, établissement.
-- CARTE_IDENTITE : doit contenir nom, prénom, date de naissance, numéro.
-- PHOTO : pas d'exigence textuelle (peu de texte attendu).
+- DIPLOME : nom de l'étudiant, intitulé du diplôme, date d'obtention, établissement émetteur.
+- RELEVE_NOTES : nom, période/année, liste de notes, établissement.
+- CARTE_IDENTITE : nom, prénom, date de naissance, numéro.
+- PHOTO : une photo d'identité, c'est-à-dire le PORTRAIT d'une personne, visage humain \
+clairement visible (type photo passeport), avec peu ou pas de texte. Mets is_valid=true \
+dès qu'un visage humain est nettement visible. Si l'image ne montre pas de visage (objet, \
+paysage, capture d'écran, document texte…), ce n'est PAS une PHOTO.
 - AUTRE : si aucun des types ci-dessus ne correspond.
 
-is_valid = true seulement si les champs attendus pour ce type sont tous présents.
-Sois strict : un document partiel doit être marqué is_valid=false avec une liste \
-d'erreurs claires (ex: "Date d'obtention manquante", "Nom de l'étudiant illisible").
+is_valid = true si le document est bien du type détecté ET exploitable. Tolère les \
+imperfections de scan/OCR : ne mets is_valid=false que si une information essentielle est \
+réellement absente ou illisible, et liste-la alors dans "errors".
 """
 
 
@@ -172,6 +174,24 @@ def _build_user_prompt(ocr_text: str, expected_type: DocumentType | None) -> str
     )
 
 
+def _build_vision_prompt(ocr_text: str, expected_type: DocumentType | None) -> str:
+    hint = (
+        f"\n\nType attendu : {expected_type.value}."
+        if expected_type
+        else ""
+    )
+    extra = (
+        f"\n\nTexte OCR (peut être imparfait ou vide) :\n{ocr_text[:8000]}"
+        if ocr_text and ocr_text.strip()
+        else ""
+    )
+    return (
+        "Analyse l'IMAGE de ce document fourni par un candidat. "
+        "Classifie-le et vérifie sa complétude selon les règles données. "
+        f"Réponds uniquement en JSON valide.{hint}{extra}"
+    )
+
+
 class GeminiClassifier:
     """Classificateur basé sur Google Gemini Flash."""
 
@@ -198,13 +218,47 @@ class GeminiClassifier:
                 system_instruction=SYSTEM_PROMPT,
                 generation_config=self._genai.GenerationConfig(
                     response_mime_type="application/json",
-                    max_output_tokens=1000,
+                    # gemini-2.5-flash consomme des tokens de « raisonnement »
+                    # (~1000-2000) AVANT de produire le JSON. Une limite trop
+                    # basse tronque la réponse (finish_reason=MAX_TOKENS) → JSON
+                    # invalide → tout document est rejeté. On laisse de la marge.
+                    max_output_tokens=4096,
                 ),
             )
             response = model.generate_content(user_content)
             return _parse_json_response(response.text, expected_type)
         except Exception as e:
             logger.exception("Erreur API Gemini: %s", e)
+            return _invalid_result(expected_type, [f"Service de classification indisponible: {e}"])
+
+    def classify_image(
+        self,
+        image_bytes: bytes,
+        mime_type: str,
+        ocr_text: str = "",
+        expected_type: DocumentType | None = None,
+    ) -> DocumentClassificationResult:
+        """Classifie directement l'IMAGE (Gemini est multimodal).
+
+        Indispensable pour la PHOTO d'identité (aucun texte) et plus fiable que
+        l'OCR pour tous les documents. L'OCR éventuel est joint comme contexte.
+        """
+        user_content = _build_vision_prompt(ocr_text, expected_type)
+        try:
+            model = self._genai.GenerativeModel(
+                model_name=self._model_name,
+                system_instruction=SYSTEM_PROMPT,
+                generation_config=self._genai.GenerationConfig(
+                    response_mime_type="application/json",
+                    max_output_tokens=4096,
+                ),
+            )
+            response = model.generate_content(
+                [{"mime_type": mime_type, "data": image_bytes}, user_content]
+            )
+            return _parse_json_response(response.text, expected_type)
+        except Exception as e:
+            logger.exception("Erreur API Gemini (vision): %s", e)
             return _invalid_result(expected_type, [f"Service de classification indisponible: {e}"])
 
 
@@ -250,6 +304,16 @@ class AnthropicClassifier:
         raw = "".join(parts).strip()
         return _parse_json_response(raw, expected_type)
 
+    def classify_image(
+        self,
+        image_bytes: bytes,
+        mime_type: str,
+        ocr_text: str = "",
+        expected_type: DocumentType | None = None,
+    ) -> DocumentClassificationResult:
+        # Vision Claude non implémentée ici — repli sur le texte OCR.
+        return self.classify(ocr_text, expected_type)
+
 
 class AIClassifier:
     """Facade unique — dispatche vers Gemini ou Anthropic selon AI_PROVIDER."""
@@ -270,6 +334,19 @@ class AIClassifier:
             return _mock_classification(expected_type)
 
         return self._backend.classify(ocr_text, expected_type)
+
+    def classify_image(
+        self,
+        image_bytes: bytes,
+        mime_type: str,
+        ocr_text: str = "",
+        expected_type: DocumentType | None = None,
+    ) -> DocumentClassificationResult:
+        if settings.DEMO_MODE or settings.AI_MOCK:
+            logger.info("[MOCK] Classification image simulée pour type=%s", expected_type)
+            return _mock_classification(expected_type or DocumentType.PHOTO)
+
+        return self._backend.classify_image(image_bytes, mime_type, ocr_text, expected_type)
 
 
 _ai_classifier: AIClassifier | None = None

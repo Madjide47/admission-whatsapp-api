@@ -23,6 +23,13 @@ from app.api.whatsapp.twilio_webhook import router as whatsapp_router
 from app.config import settings
 from app.openapi import build_openapi_schema, get_swagger_ui
 
+# Importé pour ses effets de bord : instancier `celery_app` le définit comme
+# application Celery courante, si bien que les `shared_task(...).delay()` lancés
+# depuis l'API appliquent le routage (`task_routes`) et atterrissent dans les
+# bonnes files (ocr/ai/webhooks). Sans ça, les tâches partent dans la file
+# « celery » par défaut, que les workers n'écoutent pas.
+from app.workers.celery_app import celery_app  # noqa: F401
+
 # ---------------- Logging ----------------
 logging.basicConfig(
     level=settings.LOG_LEVEL,
