@@ -3,38 +3,45 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Admission — Tableau de bord</title>
+<title>Karaba — Tableau de bord</title>
+<link rel="icon" type="image/jpeg" href="/dashboard/logo.jpeg" />
 <style>
   :root {
-    --bg:#0f172a; --panel:#1e293b; --panel2:#273449; --line:#334155;
-    --txt:#e2e8f0; --muted:#94a3b8; --accent:#6366f1; --accent2:#4f46e5;
-    --green:#22c55e; --red:#ef4444; --amber:#f59e0b; --blue:#3b82f6;
+    --bg:#0a0805; --panel:#141009; --panel2:#1f1810; --line:#3a2f17;
+    --txt:#f3ead2; --muted:#b39a64; --accent:#d4af37; --accent2:#b8901f;
+    --gold:#e8c659; --green:#3fae6b; --red:#e0564e; --amber:#e0a93f; --blue:#c9a84a;
   }
   * { box-sizing:border-box; }
   body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--txt); }
-  header { background:var(--panel); border-bottom:1px solid var(--line); padding:14px 22px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  header { background:linear-gradient(180deg,#000 0%,#100c06 100%); border-bottom:1px solid var(--accent); padding:12px 22px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; box-shadow:0 2px 16px #d4af3722; }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .brand img { height:46px; width:46px; border-radius:50%; object-fit:cover; box-shadow:0 0 0 1px #d4af3766, 0 0 14px #d4af3744; background:#000; }
+  .brand-name { font-size:24px; font-weight:800; letter-spacing:.14em;
+    background:linear-gradient(180deg,#f7e08a 0%,#d4af37 45%,#a9801c 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
   header h1 { font-size:18px; margin:0; font-weight:650; }
   .tabs { display:flex; gap:4px; margin-left:8px; }
   .tab { padding:7px 14px; border-radius:8px; cursor:pointer; color:var(--muted); font-size:14px; font-weight:550; }
-  .tab.active { background:var(--panel2); color:var(--txt); }
+  .tab.active { background:var(--panel2); color:var(--gold); box-shadow:inset 0 -2px 0 var(--accent); }
   .creds { margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   input, button, select { font-family:inherit; font-size:13px; }
   input, select { background:var(--panel2); border:1px solid var(--line); color:var(--txt); padding:7px 10px; border-radius:8px; }
+  input:focus, select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px #d4af3733; }
   header input { width:190px; }
-  button { background:var(--accent); color:#fff; border:0; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:550; }
-  button:hover { background:var(--accent2); }
-  button.ghost { background:transparent; border:1px solid var(--line); color:var(--txt); }
-  button.green { background:var(--green); } button.red { background:var(--red); } button.sm { padding:5px 9px; font-size:12px; }
+  button { background:linear-gradient(180deg,var(--gold),var(--accent2)); color:#1a1206; border:0; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:650; }
+  button:hover { filter:brightness(1.08); }
+  button.ghost { background:transparent; border:1px solid var(--accent); color:var(--gold); }
+  button.green { background:var(--green); color:#06160c; } button.red { background:var(--red); color:#1a0606; } button.sm { padding:5px 9px; font-size:12px; }
   main { padding:22px; max-width:1100px; margin:0 auto; }
   .view { display:none; } .view.active { display:block; }
   .stats { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
   .chip { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px 16px; cursor:pointer; min-width:96px; transition:.12s; }
   .chip:hover { border-color:var(--accent); }
-  .chip.active { border-color:var(--accent); background:var(--panel2); box-shadow:0 0 0 1px var(--accent); }
+  .chip.active { border-color:var(--accent); background:var(--panel2); box-shadow:0 0 0 1px var(--accent), 0 0 12px #d4af3733; }
   .chip .n { font-size:22px; font-weight:700; }
   .chip .l { font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
-  .chip.s-all .n{color:var(--txt);} .chip.s-progress .n{color:#93c5fd;}
-  .chip.s-validated .n{color:#86efac;} .chip.s-accepted .n{color:#4ade80;} .chip.s-rejected .n{color:#fca5a5;}
+  .chip.s-all .n{color:var(--gold);} .chip.s-progress .n{color:#e8c659;}
+  .chip.s-validated .n{color:#7bd49b;} .chip.s-accepted .n{color:#5fd185;} .chip.s-rejected .n{color:#e58a84;}
   .bar { display:flex; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
   .bar .grow { flex:1; }
   #search { width:100%; max-width:320px; }
@@ -44,10 +51,10 @@
   th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
   tbody tr.click { cursor:pointer; } tbody tr.click:hover { background:var(--panel2); }
   .badge { display:inline-block; padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:650; }
-  .b-collect { background:#1e3a8a33; color:#93c5fd; } .b-valid { background:#14532d44; color:#86efac; }
-  .b-pending { background:#78350f44; color:#fcd34d; } .b-accept { background:#14532d66; color:#4ade80; }
-  .b-reject { background:#7f1d1d55; color:#fca5a5; } .b-sent { background:#312e8155; color:#a5b4fc; }
-  .b-pub { background:#14532d44; color:#86efac; } .b-draft { background:#3f3f4644; color:#cbd5e1; }
+  .b-collect { background:#3a2f1744; color:#e8c659; } .b-valid { background:#14532d44; color:#86efac; }
+  .b-pending { background:#78350f44; color:#fcd34d; } .b-accept { background:#14532d66; color:#5fd185; }
+  .b-reject { background:#7f1d1d55; color:#e58a84; } .b-sent { background:#4a3f1f55; color:#d4af37; }
+  .b-pub { background:#14532d44; color:#86efac; } .b-draft { background:#2a2418aa; color:#b39a64; }
   .muted { color:var(--muted); }
   .empty { text-align:center; color:var(--muted); padding:50px; }
   .overlay { position:fixed; inset:0; background:#0008; display:none; align-items:flex-start; justify-content:center; padding:40px 16px; overflow:auto; }
@@ -75,7 +82,10 @@
 </head>
 <body>
 <header>
-  <h1>🎓 Admissions</h1>
+  <div class="brand">
+    <img src="/dashboard/logo.jpeg" alt="Karaba" />
+    <span class="brand-name">KARABA</span>
+  </div>
   <div class="tabs">
     <div class="tab active" id="tab-applications" onclick="showView('applications')">Candidatures</div>
     <div class="tab" id="tab-programs" onclick="showView('programs')">Programmes</div>

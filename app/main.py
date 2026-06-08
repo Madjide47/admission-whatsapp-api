@@ -194,6 +194,15 @@ async def dashboard() -> FileResponse:
     return FileResponse(_DASHBOARD_FILE, media_type="text/html")
 
 
+# Logo Karaba (servi pour l'en-tête du tableau de bord).
+_LOGO_FILE = Path(__file__).parent / "static" / "karaba-logo.jpeg"
+
+
+@app.get("/dashboard/logo.jpeg", include_in_schema=False)
+async def dashboard_logo() -> FileResponse:
+    return FileResponse(_LOGO_FILE, media_type="image/jpeg")
+
+
 # Liste des identifiants universités (DÉMO/DEV UNIQUEMENT — désactivé en production).
 # Permet au tableau de bord de proposer un menu « Se connecter en tant que… ».
 _DEV_CREDS_FILE = Path(__file__).parent / "static" / "dev_credentials.json"
