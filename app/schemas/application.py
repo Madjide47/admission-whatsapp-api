@@ -60,6 +60,8 @@ class DocumentRead(BaseModel):
     id: uuid.UUID
     document_type: str
     gcs_path: str
+    mime_type: str | None = None
+    original_filename: str | None = None
     is_valid: bool
     ocr_text: str | None = None
     validation_errors: list[str] | None = None

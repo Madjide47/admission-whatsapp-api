@@ -32,7 +32,10 @@ COPY app /app/app
 COPY alembic /app/alembic
 COPY alembic.ini /app/alembic.ini
 
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+# /app/uploads créé avant le chown pour qu'un volume nommé hérite d'appuser.
+RUN mkdir -p /app/uploads \
+    && useradd -m -u 1000 appuser \
+    && chown -R appuser:appuser /app
 USER appuser
 
 # Par défaut on lance la queue ocr — surchargé par docker-compose

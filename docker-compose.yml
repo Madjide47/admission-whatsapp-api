@@ -63,6 +63,7 @@ services:
       - ./alembic:/app/alembic
       - ./alembic.ini:/app/alembic.ini
       - ./tests:/app/tests
+      - uploads_data:/app/uploads
     command: >
       sh -c "alembic upgrade head &&
              uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
@@ -78,6 +79,7 @@ services:
     volumes:
       - ./app:/app/app
       - ./tests:/app/tests
+      - uploads_data:/app/uploads
     command: celery -A app.workers.celery_app worker --loglevel=INFO --queues=ocr --concurrency=2 -n worker-ocr@%h
 
   # ---------- Worker IA classification ----------
@@ -90,6 +92,7 @@ services:
     <<: *app-env
     volumes:
       - ./app:/app/app
+      - uploads_data:/app/uploads
     command: celery -A app.workers.celery_app worker --loglevel=INFO --queues=ai --concurrency=4 -n worker-ai@%h
 
   # ---------- Worker Webhooks ----------
@@ -120,4 +123,6 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  uploads_data:
     driver: local

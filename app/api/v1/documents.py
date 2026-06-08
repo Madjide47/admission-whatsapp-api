@@ -2,7 +2,7 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -106,3 +106,46 @@ async def upload_document(
         "success": True,
         "data": DocumentRead.model_validate(document).model_dump(mode="json"),
     }
+
+
+@router.get(
+    "/{application_id}/documents/{document_id}/content",
+    summary="Récupérer le contenu binaire d'un document (image ou PDF)",
+)
+def get_document_content(
+    application_id: uuid.UUID,
+    document_id: uuid.UUID,
+    university: Annotated[University, Depends(get_current_university)],
+    db: Annotated[Session, Depends(get_db)],
+) -> Response:
+    """Renvoie le fichier brut du document, pour affichage/téléchargement.
+
+    Authentifié (API Key/Secret) et filtré par université : on joint la
+    candidature pour garantir qu'elle appartient bien au tenant authentifié.
+    """
+    document = db.execute(
+        select(Document)
+        .join(Application, Document.application_id == Application.id)
+        .where(Document.id == document_id)
+        .where(Document.application_id == application_id)
+        .where(Application.university_id == university.id)
+    ).scalar_one_or_none()
+    if document is None:
+        raise _error("DOCUMENT_NOT_FOUND", "Document introuvable.", 404)
+
+    try:
+        content = get_storage_service().download_to_bytes(document.gcs_path)
+    except FileNotFoundError:
+        raise _error("FILE_NOT_FOUND", "Fichier absent du stockage.", 404)
+    except Exception:
+        raise _error("STORAGE_ERROR", "Impossible de récupérer le fichier.", 502)
+
+    return Response(
+        content=content,
+        media_type=document.mime_type or "application/octet-stream",
+        headers={
+            "Content-Disposition": (
+                f'inline; filename="{document.original_filename or "document"}"'
+            )
+        },
+    )

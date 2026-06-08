@@ -125,6 +125,12 @@
   .grid .v { font-size:14.5px; margin-top:3px; }
   .doc { background:var(--panel2); border:1px solid var(--line2); border-radius:11px; padding:12px 14px; margin-bottom:10px; }
   .doc .top { display:flex; align-items:center; gap:8px; } .doc .errs { color:#e58a84; font-size:12.5px; margin-top:7px; line-height:1.5; }
+  .doc .fname { font-size:11.5px; color:var(--faint); margin-top:3px; }
+  .docactions { margin-top:10px; }
+  .docview { margin-top:11px; }
+  .docview img.docimg { max-width:100%; max-height:430px; border-radius:10px; border:1px solid var(--line); cursor:zoom-in; display:block; }
+  .docview .dl { color:var(--gold); text-decoration:none; font-weight:600; display:inline-flex; gap:8px; padding:9px 13px; border:1px solid var(--line); border-radius:10px; }
+  .docview .dl:hover { border-color:var(--accent); background:#d4af3711; }
   .section-title { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:20px 0 12px;
     display:flex; align-items:center; gap:10px; font-weight:700; }
   .section-title .grow { flex:1; }
@@ -323,7 +329,12 @@ async function openDetail(id){
     const docs=(a.documents||[]).map(d=>{
       const ok=d.is_valid?'✅':'❌';
       const errs=(d.validation_errors||[]).length?`<div class="errs">${d.validation_errors.map(e=>'• '+esc(e)).join('<br>')}</div>`:'';
-      return `<div class="doc"><div class="top">${ok} <b>${esc(DOC_LABELS[d.document_type]||d.document_type)}</b><span class="muted" style="margin-left:auto">${fmtDate(d.uploaded_at)}</span></div>${errs}</div>`;
+      const fname=d.original_filename?`<div class="fname">${esc(d.original_filename)}</div>`:'';
+      return `<div class="doc">
+        <div class="top">${ok} <b>${esc(DOC_LABELS[d.document_type]||d.document_type)}</b><span class="muted" style="margin-left:auto">${fmtDate(d.uploaded_at)}</span></div>
+        ${fname}${errs}
+        <div class="docactions"><button class="ghost sm" onclick="viewDoc('${a.id}','${d.id}','${esc(d.mime_type||'')}',this)">👁 Voir le fichier</button></div>
+        <div class="docview" style="display:none"></div></div>`;
     }).join('')||'<div class="muted">Aucun document.</div>';
     $('modal').className='modal';
     $('modal').innerHTML=`<div class="modal-head">
@@ -354,6 +365,33 @@ async function decide(id,decision){
   catch(e){ showErr("Décision impossible : "+e.message); }
 }
 function closeModal(){ $('overlay').classList.remove('show'); }
+
+async function viewDoc(appId, docId, mime, btn){
+  const holder = btn.closest('.doc').querySelector('.docview');
+  if(holder.dataset.loaded){
+    const show = holder.style.display==='none';
+    holder.style.display = show?'block':'none';
+    btn.textContent = show?'🙈 Masquer le fichier':'👁 Voir le fichier';
+    return;
+  }
+  const old=btn.textContent; btn.textContent='⏳ Chargement…'; btn.disabled=true;
+  try {
+    const res = await fetch(`/api/v1/applications/${appId}/documents/${docId}/content`, { headers: headers() });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    if((mime||blob.type||'').startsWith('image/')){
+      holder.innerHTML = `<img class="docimg" src="${url}" onclick="window.open('${url}','_blank')" title="Cliquer pour agrandir"/>`;
+    } else {
+      holder.innerHTML = `<a class="dl" href="${url}" target="_blank" rel="noopener">📄 Ouvrir le document (nouvel onglet)</a>`;
+    }
+    holder.dataset.loaded='1'; holder.style.display='block';
+    btn.textContent='🙈 Masquer le fichier'; btn.disabled=false;
+  } catch(e){
+    holder.innerHTML='<span class="errs">Impossible de charger le fichier ('+esc(e.message)+').</span>';
+    holder.style.display='block'; btn.textContent=old; btn.disabled=false;
+  }
+}
 
 /* ---------- Programmes / Formulaires ---------- */
 async function loadPrograms(){

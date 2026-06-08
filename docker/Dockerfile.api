@@ -28,8 +28,11 @@ COPY app /app/app
 COPY alembic /app/alembic
 COPY alembic.ini /app/alembic.ini
 
-# Utilisateur non-root
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+# Utilisateur non-root. On crée /app/uploads AVANT le chown : ainsi un volume
+# nommé monté sur ce chemin hérite du propriétaire appuser (sinon root → EACCES).
+RUN mkdir -p /app/uploads \
+    && useradd -m -u 1000 appuser \
+    && chown -R appuser:appuser /app
 USER appuser
 
 EXPOSE 8000
