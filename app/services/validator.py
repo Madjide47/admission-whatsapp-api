@@ -35,6 +35,16 @@ _REQUIRED_ORDERED: list[DocumentType] = [
     DocumentType.PHOTO,
 ]
 
+# Statuts « verrouillés » : la collecte est terminée définitivement (dossier
+# transmis à l'université ou décision rendue). Un document tardif ne doit pas
+# rouvrir ces dossiers via la re-validation automatique.
+_LOCKED_STATUSES: set[ApplicationStatus] = {
+    ApplicationStatus.PENDING_ENROLLMENT,
+    ApplicationStatus.SENT_TO_UNIVERSITY,
+    ApplicationStatus.ACCEPTED,
+    ApplicationStatus.REJECTED,
+}
+
 
 class ApplicationValidator:
     """Évalue la complétude et la qualité d'une candidature."""
@@ -87,7 +97,20 @@ class ApplicationValidator:
         return len(reasons) == 0, round(score, 3), reasons
 
     def apply_validation(self, application: Application) -> Application:
-        """Effectue la validation et met à jour le statut de la candidature."""
+        """Effectue la validation et met à jour le statut de la candidature.
+
+        Garde-fou : une candidature déjà décidée ou transmise (états verrouillés)
+        ne doit JAMAIS être rouverte par l'arrivée tardive d'un document — sinon
+        un dossier ACCEPTED repasserait en COLLECTING_DOCUMENTS.
+        """
+        if application.status in _LOCKED_STATUSES:
+            logger.info(
+                "Validation ignorée pour %s : statut verrouillé (%s).",
+                application.id,
+                application.status.value,
+            )
+            return application
+
         is_complete, score, reasons = self.validate(application)
 
         application.validation_score = score

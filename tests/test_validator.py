@@ -153,6 +153,31 @@ def test_apply_validation_stays_collecting_if_incomplete(db_session, base_applic
     assert "Problèmes" in result.ai_notes
 
 
+@pytest.mark.parametrize(
+    "locked_status",
+    [
+        ApplicationStatus.ACCEPTED,
+        ApplicationStatus.REJECTED,
+        ApplicationStatus.SENT_TO_UNIVERSITY,
+        ApplicationStatus.PENDING_ENROLLMENT,
+    ],
+)
+def test_apply_validation_never_reopens_decided_application(
+    db_session, base_application, locked_status
+):
+    """Un document tardif ne doit pas rouvrir un dossier décidé/transmis."""
+    base_application.status = locked_status
+    base_application.ai_notes = "Décision finale."
+    db_session.commit()
+
+    validator = ApplicationValidator(db_session)
+    result = validator.apply_validation(base_application)
+
+    # Statut et notes préservés à l'identique
+    assert result.status == locked_status
+    assert result.ai_notes == "Décision finale."
+
+
 # ---------------------------------------------------------------------------
 # Pipeline: check_application_completion_task
 # ---------------------------------------------------------------------------
