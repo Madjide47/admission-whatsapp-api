@@ -194,6 +194,19 @@ async def dashboard() -> FileResponse:
     return FileResponse(_DASHBOARD_FILE, media_type="text/html")
 
 
+# Liste des identifiants universités (DÉMO/DEV UNIQUEMENT — désactivé en production).
+# Permet au tableau de bord de proposer un menu « Se connecter en tant que… ».
+_DEV_CREDS_FILE = Path(__file__).parent / "static" / "dev_credentials.json"
+
+if not settings.is_production:
+
+    @app.get("/dev/credentials", include_in_schema=False)
+    async def dev_credentials():
+        if _DEV_CREDS_FILE.exists():
+            return FileResponse(_DEV_CREDS_FILE, media_type="application/json")
+        return JSONResponse([], status_code=200)
+
+
 @app.get("/", tags=["system"], include_in_schema=False)
 async def root() -> dict:
     return {

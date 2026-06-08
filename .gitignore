@@ -87,3 +87,6 @@ alembic/versions/__pycache__/
 
 # Stockage local (mode demo)
 uploads/
+
+# Identifiants universités générés pour la démo (secrets en clair — NE PAS committer)
+app/static/dev_credentials.json

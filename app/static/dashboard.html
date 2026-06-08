@@ -81,6 +81,9 @@
     <div class="tab" id="tab-programs" onclick="showView('programs')">Programmes</div>
   </div>
   <div class="creds">
+    <select id="uniPicker" onchange="pickUni()" title="Se connecter en tant qu'université">
+      <option value="">— Se connecter en tant que… —</option>
+    </select>
     <input id="apiKey" placeholder="X-API-Key (univ_…)" autocomplete="off" />
     <input id="apiSecret" type="password" placeholder="X-API-Secret (sk_…)" autocomplete="off" />
     <button onclick="connect()">Connexion</button>
@@ -309,8 +312,26 @@ async function saveForm(programId, wasPublished){
   } catch(e){ showErr("Échec : "+e.message); }
 }
 
+/* ---------- Connexion rapide « en tant qu'université » (dev/démo) ---------- */
+let CREDS_LIST=[];
+async function loadUniPicker(){
+  try {
+    const res=await fetch('/dev/credentials'); if(!res.ok) return;
+    CREDS_LIST=await res.json();
+    if(!Array.isArray(CREDS_LIST)||!CREDS_LIST.length) return;
+    $('uniPicker').innerHTML='<option value="">— Se connecter en tant que… —</option>'+
+      CREDS_LIST.map((u,i)=>`<option value="${i}">${esc(u.name)}</option>`).join('');
+  } catch(e){ /* endpoint absent (prod) → on garde la saisie manuelle */ }
+}
+function pickUni(){
+  const i=$('uniPicker').value; if(i==='') return;
+  const u=CREDS_LIST[i]; if(!u) return;
+  $('apiKey').value=u.api_key; $('apiSecret').value=u.api_secret;
+  connect();
+}
+
 /* init */
-(function(){ const c=creds(); $('apiKey').value=c.k; $('apiSecret').value=c.s; if(c.k&&c.s){ loadList(); loadPrograms(); } })();
+(function(){ const c=creds(); $('apiKey').value=c.k; $('apiSecret').value=c.s; loadUniPicker(); if(c.k&&c.s){ loadList(); loadPrograms(); } })();
 </script>
 </body>
 </html>
