@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admission — Tableau de bord</title>
+<style>
+  :root {
+    --bg:#0f172a; --panel:#1e293b; --panel2:#273449; --line:#334155;
+    --txt:#e2e8f0; --muted:#94a3b8; --accent:#6366f1; --accent2:#4f46e5;
+    --green:#22c55e; --red:#ef4444; --amber:#f59e0b; --blue:#3b82f6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+         background:var(--bg); color:var(--txt); }
+  header { background:var(--panel); border-bottom:1px solid var(--line);
+           padding:14px 22px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  header h1 { font-size:18px; margin:0; font-weight:650; }
+  header .sub { color:var(--muted); font-size:13px; }
+  .creds { margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  input, button, select { font-family:inherit; font-size:13px; }
+  input { background:var(--panel2); border:1px solid var(--line); color:var(--txt);
+          padding:7px 10px; border-radius:8px; width:200px; }
+  button { background:var(--accent); color:#fff; border:0; padding:8px 14px;
+           border-radius:8px; cursor:pointer; font-weight:550; }
+  button:hover { background:var(--accent2); }
+  button.ghost { background:transparent; border:1px solid var(--line); color:var(--txt); }
+  button.green { background:var(--green); } button.red { background:var(--red); }
+  main { padding:22px; max-width:1100px; margin:0 auto; }
+  .bar { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+  .bar .count { color:var(--muted); font-size:13px; }
+  table { width:100%; border-collapse:collapse; background:var(--panel); border-radius:12px; overflow:hidden; }
+  th, td { text-align:left; padding:11px 14px; border-bottom:1px solid var(--line); font-size:14px; }
+  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
+  tbody tr { cursor:pointer; }
+  tbody tr:hover { background:var(--panel2); }
+  .badge { display:inline-block; padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:650; }
+  .b-collect { background:#1e3a8a33; color:#93c5fd; }
+  .b-valid { background:#14532d44; color:#86efac; }
+  .b-pending { background:#78350f44; color:#fcd34d; }
+  .b-accept { background:#14532d66; color:#4ade80; }
+  .b-reject { background:#7f1d1d55; color:#fca5a5; }
+  .b-sent { background:#312e8155; color:#a5b4fc; }
+  .muted { color:var(--muted); }
+  .empty { text-align:center; color:var(--muted); padding:50px; }
+  /* modal */
+  .overlay { position:fixed; inset:0; background:#0008; display:none; align-items:flex-start;
+             justify-content:center; padding:40px 16px; overflow:auto; }
+  .overlay.show { display:flex; }
+  .modal { background:var(--panel); border:1px solid var(--line); border-radius:16px;
+           width:100%; max-width:720px; }
+  .modal-head { padding:18px 22px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px; }
+  .modal-head h2 { margin:0; font-size:18px; }
+  .modal-head .x { margin-left:auto; cursor:pointer; color:var(--muted); font-size:22px; line-height:1; }
+  .modal-body { padding:22px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 24px; margin-bottom:18px; }
+  .grid .k { color:var(--muted); font-size:12px; }
+  .grid .v { font-size:14px; margin-bottom:6px; }
+  .doc { background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+         padding:12px 14px; margin-bottom:10px; }
+  .doc .top { display:flex; align-items:center; gap:8px; }
+  .doc .errs { color:#fca5a5; font-size:12.5px; margin-top:6px; }
+  .section-title { font-size:13px; text-transform:uppercase; letter-spacing:.04em;
+                   color:var(--muted); margin:18px 0 10px; }
+  .actions { display:flex; gap:10px; margin-top:18px; }
+  .err-box { background:#7f1d1d44; border:1px solid #b91c1c; color:#fecaca;
+             padding:10px 14px; border-radius:10px; margin-bottom:14px; font-size:13px; display:none; }
+  .ai-notes { background:var(--panel2); border-left:3px solid var(--accent); padding:10px 14px;
+              border-radius:8px; font-size:13.5px; white-space:pre-wrap; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎓 Admissions</h1>
+  <span class="sub">Tableau de bord interne</span>
+  <div class="creds">
+    <input id="apiKey" placeholder="X-API-Key (univ_…)" autocomplete="off" />
+    <input id="apiSecret" type="password" placeholder="X-API-Secret (sk_…)" autocomplete="off" />
+    <button onclick="connect()">Connexion</button>
+  </div>
+</header>
+
+<main>
+  <div id="errBox" class="err-box"></div>
+  <div class="bar">
+    <button class="ghost" onclick="loadList()">↻ Rafraîchir</button>
+    <span class="count" id="count"></span>
+  </div>
+  <div id="tableWrap"></div>
+</main>
+
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const STATUS = {
+  CHOOSING_UNIVERSITY:["En cours","b-collect"], CHOOSING_PROGRAM:["En cours","b-collect"],
+  COLLECTING_FIELDS:["Saisie infos","b-collect"], COLLECTING_DOCUMENTS:["Collecte docs","b-collect"],
+  VALIDATING:["Validation","b-pending"], VALIDATED:["Validé","b-valid"],
+  PENDING_ENROLLMENT:["Attente inscription","b-pending"], SENT_TO_UNIVERSITY:["Envoyé","b-sent"],
+  ACCEPTED:["Accepté","b-accept"], REJECTED:["Refusé","b-reject"],
+};
+
+function creds(){ return { k:localStorage.getItem('dash_key')||'', s:localStorage.getItem('dash_secret')||'' }; }
+function headers(){ const c=creds(); return { 'X-API-Key':c.k, 'X-API-Secret':c.s }; }
+function showErr(m){ const e=$('errBox'); e.textContent=m; e.style.display='block'; }
+function clearErr(){ $('errBox').style.display='none'; }
+
+function connect(){
+  localStorage.setItem('dash_key', $('apiKey').value.trim());
+  localStorage.setItem('dash_secret', $('apiSecret').value.trim());
+  loadList();
+}
+
+function badge(status){
+  const [label,cls] = STATUS[status] || [status,'b-collect'];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+function fmtDate(s){ if(!s) return '—'; const d=new Date(s);
+  return d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }
+function score(v){ return (v==null)?'—':Math.round(v*100)+'%'; }
+
+async function api(path, opts={}){
+  const res = await fetch(path, { ...opts, headers:{ ...headers(), ...(opts.headers||{}) } });
+  const body = await res.json().catch(()=>({}));
+  if(!res.ok || body.success===false){
+    const msg = body?.error?.message || ('Erreur HTTP '+res.status);
+    throw new Error(msg);
+  }
+  return body.data;
+}
+
+async function loadList(){
+  clearErr();
+  const c=creds();
+  if(!c.k || !c.s){ showErr("Entrez votre API Key et API Secret puis cliquez sur Connexion."); return; }
+  try {
+    const data = await api('/api/v1/applications');
+    renderTable(data.items);
+    $('count').textContent = `${data.count} candidature(s)`;
+  } catch(e){ showErr(e.message); $('tableWrap').innerHTML=''; $('count').textContent=''; }
+}
+
+function renderTable(items){
+  if(!items.length){ $('tableWrap').innerHTML='<div class="empty">Aucune candidature pour le moment.</div>'; return; }
+  const rows = items.map(a => `
+    <tr onclick="openDetail('${a.id}')">
+      <td><b>${a.student_name||'<span class=muted>—</span>'}</b></td>
+      <td class="muted">${a.student_phone||''}</td>
+      <td>${a.program||'<span class=muted>—</span>'}</td>
+      <td>${badge(a.status)}</td>
+      <td>${score(a.validation_score)}</td>
+      <td class="muted">${fmtDate(a.created_at)}</td>
+    </tr>`).join('');
+  $('tableWrap').innerHTML = `<table>
+    <thead><tr><th>Étudiant</th><th>Téléphone</th><th>Programme</th><th>Statut</th><th>Score</th><th>Créée le</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+
+async function openDetail(id){
+  clearErr();
+  try {
+    const a = await api('/api/v1/applications/'+id);
+    const decided = ['ACCEPTED','REJECTED'].includes(a.status);
+    const docs = (a.documents||[]).map(d => {
+      const ok = d.is_valid ? '✅' : '❌';
+      const errs = (d.validation_errors||[]).length
+        ? `<div class="errs">${d.validation_errors.map(e=>'• '+e).join('<br>')}</div>` : '';
+      return `<div class="doc"><div class="top">${ok} <b>${d.document_type}</b>
+              <span class="muted" style="margin-left:auto">${fmtDate(d.uploaded_at)}</span></div>${errs}</div>`;
+    }).join('') || '<div class="muted">Aucun document.</div>';
+
+    $('modal').innerHTML = `
+      <div class="modal-head">
+        <h2>${a.student_name||'Candidature'}</h2>${badge(a.status)}
+        <span class="x" onclick="closeModal()">×</span>
+      </div>
+      <div class="modal-body">
+        <div class="grid">
+          <div><div class="k">Téléphone</div><div class="v">${a.student_phone||'—'}</div></div>
+          <div><div class="k">Email</div><div class="v">${a.student_email||'—'}</div></div>
+          <div><div class="k">Programme</div><div class="v">${a.program||'—'}</div></div>
+          <div><div class="k">Score de validation</div><div class="v">${score(a.validation_score)}</div></div>
+          <div><div class="k">Créée le</div><div class="v">${fmtDate(a.created_at)}</div></div>
+          <div><div class="k">Décision le</div><div class="v">${fmtDate(a.decided_at)}</div></div>
+        </div>
+        ${a.ai_notes ? `<div class="ai-notes">${a.ai_notes}</div>` : ''}
+        ${a.decision_comment ? `<div class="section-title">Commentaire de décision</div><div class="v">${a.decision_comment}</div>` : ''}
+        <div class="section-title">Documents (${(a.documents||[]).length})</div>
+        ${docs}
+        ${decided ? '' : `<div class="actions">
+          <button class="green" onclick="decide('${a.id}','ACCEPTED')">✓ Accepter</button>
+          <button class="red" onclick="decide('${a.id}','REJECTED')">✗ Refuser</button>
+        </div>`}
+      </div>`;
+    $('overlay').classList.add('show');
+  } catch(e){ showErr(e.message); }
+}
+
+function closeModal(){ $('overlay').classList.remove('show'); }
+
+async function decide(id, decision){
+  const verb = decision==='ACCEPTED' ? 'accepter' : 'refuser';
+  const comment = prompt(`Commentaire pour ${verb} cette candidature :`,
+    decision==='ACCEPTED' ? 'Félicitations, vous êtes admis(e) !' : '');
+  if(comment===null) return;
+  try {
+    await api('/api/v1/applications/'+id+'/decision', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ decision, comment }),
+    });
+    closeModal();
+    loadList();
+  } catch(e){ showErr("Décision impossible : "+e.message); }
+}
+
+// init
+(function(){
+  const c=creds();
+  $('apiKey').value=c.k; $('apiSecret').value=c.s;
+  if(c.k && c.s) loadList();
+})();
+</script>
+</body>
+</html>

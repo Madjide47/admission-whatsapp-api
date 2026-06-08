@@ -5,12 +5,13 @@ rate limiting, monitoring, et gestionnaires d'erreurs globaux.
 """
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import sentry_sdk
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -181,6 +182,16 @@ if not settings.is_production:
 async def health() -> dict:
     """Endpoint de santé — utilisé par les load balancers."""
     return {"status": "ok", "version": __version__}
+
+
+# Tableau de bord interne (page statique qui consomme l'API — même origine, pas de CORS).
+# Outil de suivi/démo ; les données ne s'affichent qu'avec une API Key + Secret valides.
+_DASHBOARD_FILE = Path(__file__).parent / "static" / "dashboard.html"
+
+
+@app.get("/dashboard", include_in_schema=False)
+async def dashboard() -> FileResponse:
+    return FileResponse(_DASHBOARD_FILE, media_type="text/html")
 
 
 @app.get("/", tags=["system"], include_in_schema=False)
