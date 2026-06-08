@@ -6,79 +6,194 @@
 <title>Tableau de bord — Admissions</title>
 <style>
   :root {
-    --bg:#0a0805; --panel:#141009; --panel2:#1f1810; --line:#3a2f17;
-    --txt:#f3ead2; --muted:#b39a64; --accent:#d4af37; --accent2:#b8901f;
-    --gold:#e8c659; --green:#3fae6b; --red:#e0564e; --amber:#e0a93f; --blue:#c9a84a;
+    --bg:#0a0805; --bg2:#0f0b06; --panel:#15110a; --panel2:#1f1810; --line:#3a2f17; --line2:#2a2214;
+    --txt:#f3ead2; --muted:#b39a64; --faint:#7a6a45;
+    --accent:#d4af37; --accent2:#b8901f; --gold:#e8c659;
+    --green:#3fae6b; --red:#e0564e; --amber:#e0a93f;
+    --shadow:0 8px 30px #00000066;
   }
   * { box-sizing:border-box; }
-  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--txt); }
-  header { background:linear-gradient(180deg,#000 0%,#100c06 100%); border-bottom:1px solid var(--accent); padding:12px 22px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; box-shadow:0 2px 16px #d4af3722; }
-  header h1 { font-size:18px; margin:0; font-weight:650; }
-  .tabs { display:flex; gap:4px; margin-left:8px; }
-  .tab { padding:7px 14px; border-radius:8px; cursor:pointer; color:var(--muted); font-size:14px; font-weight:550; }
-  .tab.active { background:var(--panel2); color:var(--gold); box-shadow:inset 0 -2px 0 var(--accent); }
+  html,body { height:100%; }
+  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; color:var(--txt);
+    background:radial-gradient(1200px 600px at 80% -10%, #1a140a 0%, transparent 60%), var(--bg); }
+  ::-webkit-scrollbar { width:10px; height:10px; }
+  ::-webkit-scrollbar-thumb { background:#3a2f17; border-radius:10px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+
+  /* ---------- Header ---------- */
+  header { position:sticky; top:0; z-index:20; background:linear-gradient(180deg,#000 0%,#0d0904 100%);
+    border-bottom:1px solid var(--accent); padding:11px 22px; display:flex; align-items:center; gap:16px;
+    flex-wrap:wrap; box-shadow:0 2px 20px #d4af3722; }
+  .app-title { font-size:16px; font-weight:800; letter-spacing:.18em; text-transform:uppercase;
+    background:linear-gradient(180deg,#f7e08a,#d4af37 55%,#a9801c); -webkit-background-clip:text;
+    background-clip:text; -webkit-text-fill-color:transparent; }
+  .tabs { display:flex; gap:4px; }
+  .tab { padding:8px 16px; border-radius:10px; cursor:pointer; color:var(--muted); font-size:14px; font-weight:600;
+    display:flex; align-items:center; gap:7px; transition:.15s; }
+  .tab:hover { color:var(--txt); background:#ffffff08; }
+  .tab.active { background:var(--panel2); color:var(--gold); box-shadow:inset 0 0 0 1px #d4af3744; }
   .creds { margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   input, button, select { font-family:inherit; font-size:13px; }
-  input, select { background:var(--panel2); border:1px solid var(--line); color:var(--txt); padding:7px 10px; border-radius:8px; }
-  input:focus, select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px #d4af3733; }
-  header input { width:190px; }
-  button { background:linear-gradient(180deg,var(--gold),var(--accent2)); color:#1a1206; border:0; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:650; }
-  button:hover { filter:brightness(1.08); }
-  button.ghost { background:transparent; border:1px solid var(--accent); color:var(--gold); }
-  button.green { background:var(--green); color:#06160c; } button.red { background:var(--red); color:#1a0606; } button.sm { padding:5px 9px; font-size:12px; }
-  main { padding:22px; max-width:1100px; margin:0 auto; }
-  .view { display:none; } .view.active { display:block; }
-  .stats { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
-  .chip { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px 16px; cursor:pointer; min-width:96px; transition:.12s; }
-  .chip:hover { border-color:var(--accent); }
-  .chip.active { border-color:var(--accent); background:var(--panel2); box-shadow:0 0 0 1px var(--accent), 0 0 12px #d4af3733; }
-  .chip .n { font-size:22px; font-weight:700; }
-  .chip .l { font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+  input, select { background:var(--panel2); border:1px solid var(--line); color:var(--txt); padding:8px 11px; border-radius:9px; }
+  input::placeholder { color:var(--faint); }
+  input:focus, select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px #d4af3722; }
+  header input { width:188px; }
+  select option { background:#15110a; }
+  button { background:linear-gradient(180deg,var(--gold),var(--accent2)); color:#1a1206; border:0; padding:9px 15px;
+    border-radius:9px; cursor:pointer; font-weight:700; transition:.15s; }
+  button:hover { filter:brightness(1.08); transform:translateY(-1px); }
+  button:active { transform:translateY(0); }
+  button.ghost { background:transparent; border:1px solid var(--line); color:var(--gold); }
+  button.ghost:hover { border-color:var(--accent); background:#d4af3711; }
+  button.green { background:linear-gradient(180deg,#54c483,#2f8f56); color:#04140a; }
+  button.red { background:linear-gradient(180deg,#ec6a62,#c43d35); color:#1a0606; }
+  button.sm { padding:6px 11px; font-size:12px; border-radius:8px; }
+  button.icon { padding:7px 10px; }
+
+  main { padding:24px 22px 60px; max-width:1140px; margin:0 auto; }
+  .view { display:none; animation:fade .25s ease; } .view.active { display:block; }
+  @keyframes fade { from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
+
+  /* ---------- Stat chips ---------- */
+  .stats { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
+  .chip { position:relative; background:linear-gradient(180deg,#16110a,#120e07); border:1px solid var(--line2);
+    border-radius:14px; padding:13px 18px; cursor:pointer; min-width:108px; transition:.15s; overflow:hidden; }
+  .chip:hover { border-color:var(--accent); transform:translateY(-2px); }
+  .chip.active { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent), 0 6px 20px #d4af3722; }
+  .chip.active::before { content:""; position:absolute; inset:0 0 auto 0; height:3px; background:linear-gradient(90deg,var(--gold),var(--accent2)); }
+  .chip .n { font-size:26px; font-weight:800; line-height:1; }
+  .chip .l { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-top:6px; }
   .chip.s-all .n{color:var(--gold);} .chip.s-progress .n{color:#e8c659;}
   .chip.s-validated .n{color:#7bd49b;} .chip.s-accepted .n{color:#5fd185;} .chip.s-rejected .n{color:#e58a84;}
+
   .bar { display:flex; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
   .bar .grow { flex:1; }
-  #search { width:100%; max-width:320px; }
-  .bar .count { color:var(--muted); font-size:13px; }
-  table { width:100%; border-collapse:collapse; background:var(--panel); border-radius:12px; overflow:hidden; }
-  th, td { text-align:left; padding:11px 14px; border-bottom:1px solid var(--line); font-size:14px; }
-  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
-  tbody tr.click { cursor:pointer; } tbody tr.click:hover { background:var(--panel2); }
-  .badge { display:inline-block; padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:650; }
-  .b-collect { background:#3a2f1744; color:#e8c659; } .b-valid { background:#14532d44; color:#86efac; }
-  .b-pending { background:#78350f44; color:#fcd34d; } .b-accept { background:#14532d66; color:#5fd185; }
-  .b-reject { background:#7f1d1d55; color:#e58a84; } .b-sent { background:#4a3f1f55; color:#d4af37; }
-  .b-pub { background:#14532d44; color:#86efac; } .b-draft { background:#2a2418aa; color:#b39a64; }
+  .search-wrap { position:relative; flex:1; max-width:360px; }
+  .search-wrap input { width:100%; padding-left:34px; }
+  .search-wrap .ico { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--faint); font-size:14px; }
+  .count { color:var(--muted); font-size:13px; white-space:nowrap; }
+
+  /* ---------- Table ---------- */
+  .card { background:linear-gradient(180deg,#14100a,#100c07); border:1px solid var(--line2); border-radius:16px;
+    overflow:hidden; box-shadow:var(--shadow); }
+  table { width:100%; border-collapse:collapse; }
+  th, td { text-align:left; padding:13px 16px; border-bottom:1px solid var(--line2); font-size:14px; }
+  th { color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.06em;
+    background:#0d0904; position:sticky; top:0; }
+  tbody tr { transition:background .12s; }
+  tbody tr.click { cursor:pointer; }
+  tbody tr.click:hover { background:#ffffff07; }
+  tbody tr:last-child td { border-bottom:0; }
+  .who { display:flex; align-items:center; gap:11px; }
+  .avatar { width:34px; height:34px; border-radius:50%; flex:0 0 auto; display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:700; color:#1a1206; background:linear-gradient(135deg,#f1d98a,#c79a23); box-shadow:0 0 0 1px #d4af3733; }
+  .who .nm { font-weight:650; }
+  .scorebar { display:flex; align-items:center; gap:9px; min-width:96px; }
+  .scorebar .track { flex:1; height:6px; border-radius:6px; background:#2a2214; overflow:hidden; }
+  .scorebar .fill { height:100%; border-radius:6px; background:linear-gradient(90deg,#c79a23,#7bd49b); }
+  .scorebar .pct { font-size:12.5px; color:var(--muted); width:34px; text-align:right; }
+
+  /* ---------- Badges ---------- */
+  .badge { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:11.5px; font-weight:650; white-space:nowrap; }
+  .badge::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; opacity:.9; }
+  .badge.nodot::before { display:none; }
+  .b-collect { background:#3a2f1733; color:#e8c659; } .b-valid { background:#14532d33; color:#86efac; }
+  .b-pending { background:#78350f33; color:#fcd34d; } .b-accept { background:#14532d4d; color:#5fd185; }
+  .b-reject { background:#7f1d1d44; color:#e58a84; } .b-sent { background:#4a3f1f44; color:#e8c659; }
+  .b-pub { background:#14532d33; color:#86efac; } .b-draft { background:#2a221888; color:#b39a64; }
+
   .muted { color:var(--muted); }
-  .empty { text-align:center; color:var(--muted); padding:50px; }
-  .overlay { position:fixed; inset:0; background:#0008; display:none; align-items:flex-start; justify-content:center; padding:40px 16px; overflow:auto; }
-  .overlay.show { display:flex; }
-  .modal { background:var(--panel); border:1px solid var(--line); border-radius:16px; width:100%; max-width:760px; }
-  .modal-head { padding:18px 22px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px; }
-  .modal-head h2 { margin:0; font-size:18px; }
-  .modal-head .x { margin-left:auto; cursor:pointer; color:var(--muted); font-size:22px; line-height:1; }
+  .empty { text-align:center; color:var(--muted); padding:54px 20px; }
+  .empty .big { font-size:34px; margin-bottom:10px; opacity:.5; }
+
+  /* ---------- Modal ---------- */
+  .overlay { position:fixed; inset:0; background:#000a; backdrop-filter:blur(4px); display:none;
+    align-items:flex-start; justify-content:center; padding:42px 16px; overflow:auto; z-index:50; }
+  .overlay.show { display:flex; animation:fade .2s ease; }
+  .modal { background:linear-gradient(180deg,#16110a,#100c07); border:1px solid var(--line); border-radius:18px;
+    width:100%; max-width:760px; box-shadow:var(--shadow); animation:pop .22s ease; }
+  .modal.wide { max-width:980px; }
+  @keyframes pop { from{opacity:0; transform:scale(.97) translateY(8px);} to{opacity:1; transform:none;} }
+  .modal-head { padding:18px 22px; border-bottom:1px solid var(--line2); display:flex; align-items:center; gap:12px; }
+  .modal-head h2 { margin:0; font-size:18px; font-weight:700; }
+  .modal-head .x { margin-left:auto; cursor:pointer; color:var(--muted); font-size:24px; line-height:1; width:30px; height:30px;
+    display:flex; align-items:center; justify-content:center; border-radius:8px; transition:.12s; }
+  .modal-head .x:hover { background:#ffffff10; color:var(--txt); }
   .modal-body { padding:22px; }
-  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 24px; margin-bottom:18px; }
-  .grid .k { color:var(--muted); font-size:12px; } .grid .v { font-size:14px; margin-bottom:6px; }
-  .doc { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:10px; }
-  .doc .top { display:flex; align-items:center; gap:8px; } .doc .errs { color:#fca5a5; font-size:12.5px; margin-top:6px; }
-  .section-title { font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:18px 0 10px; display:flex; align-items:center; gap:10px; }
-  .actions { display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; }
-  .err-box { background:#7f1d1d44; border:1px solid #b91c1c; color:#fecaca; padding:10px 14px; border-radius:10px; margin-bottom:14px; font-size:13px; display:none; }
-  .ok-box { background:#14532d44; border:1px solid #15803d; color:#bbf7d0; padding:10px 14px; border-radius:10px; margin-bottom:14px; font-size:13px; display:none; }
-  .ai-notes { background:var(--panel2); border-left:3px solid var(--accent); padding:10px 14px; border-radius:8px; font-size:13.5px; white-space:pre-wrap; }
-  /* éditeur de formulaire */
-  .erow { display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
-  .erow input { flex:1; min-width:120px; } .erow select { min-width:130px; }
-  .erow label { font-size:12.5px; color:var(--muted); display:flex; align-items:center; gap:5px; white-space:nowrap; }
-  .erow .del { background:#7f1d1d; padding:6px 9px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:14px 24px; margin-bottom:18px; }
+  .grid .k { color:var(--muted); font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; }
+  .grid .v { font-size:14.5px; margin-top:3px; }
+  .doc { background:var(--panel2); border:1px solid var(--line2); border-radius:11px; padding:12px 14px; margin-bottom:10px; }
+  .doc .top { display:flex; align-items:center; gap:8px; } .doc .errs { color:#e58a84; font-size:12.5px; margin-top:7px; line-height:1.5; }
+  .section-title { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:20px 0 12px;
+    display:flex; align-items:center; gap:10px; font-weight:700; }
+  .section-title .grow { flex:1; }
+  .section-title .ct { background:#2a2214; color:var(--gold); border-radius:999px; padding:2px 9px; font-size:11px; letter-spacing:0; }
+  .actions { display:flex; gap:10px; margin-top:22px; flex-wrap:wrap; align-items:center; }
+  .ai-notes { background:var(--panel2); border-left:3px solid var(--accent); padding:11px 14px; border-radius:8px; font-size:13.5px; white-space:pre-wrap; line-height:1.5; }
+  .err-box, .ok-box { padding:11px 15px; border-radius:11px; margin-bottom:14px; font-size:13px; display:none; }
+  .err-box { background:#7f1d1d33; border:1px solid #b91c1c66; color:#fca5a5; }
+  .ok-box { background:#14532d33; border:1px solid #15803d66; color:#bbf7d0; }
+
+  /* ---------- Form editor ---------- */
+  .form-layout { display:grid; grid-template-columns:1fr 318px; gap:22px; }
+  @media (max-width:820px){ .form-layout { grid-template-columns:1fr; } }
+  .hint { color:var(--faint); font-size:12.5px; margin:-4px 0 12px; }
+  .fcard { background:var(--panel2); border:1px solid var(--line2); border-radius:12px; padding:12px 12px 12px 14px;
+    margin-bottom:10px; display:flex; gap:12px; align-items:flex-start; position:relative; transition:.12s; }
+  .fcard:hover { border-color:#4a3f1f; }
+  .fcard .ord { flex:0 0 auto; width:24px; height:24px; border-radius:7px; background:#2a2214; color:var(--gold);
+    font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; margin-top:3px; }
+  .fcard .body { flex:1; display:flex; flex-direction:column; gap:8px; min-width:0; }
+  .fcard .line { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .fcard input, .fcard select { background:#15110a; }
+  .fcard input.lbl { width:100%; font-weight:600; }
+  .fcard input.small { flex:1; min-width:120px; }
+  .fcard select { min-width:140px; }
+  .fcard .del { background:#3a1414; color:#e58a84; border:1px solid #5a1f1f; padding:6px 9px; border-radius:8px; cursor:pointer;
+    flex:0 0 auto; align-self:flex-start; font-size:13px; }
+  .fcard .del:hover { background:#511c1c; }
+  .field-cap { font-size:11px; color:var(--faint); }
+
+  /* toggle switch */
+  .switch { display:inline-flex; align-items:center; gap:8px; cursor:pointer; user-select:none; font-size:12.5px; color:var(--muted); }
+  .switch input { display:none; }
+  .switch .track { width:38px; height:21px; border-radius:999px; background:#2a2214; position:relative; transition:.18s; flex:0 0 auto; }
+  .switch .track::after { content:""; position:absolute; top:2px; left:2px; width:17px; height:17px; border-radius:50%;
+    background:#7a6a45; transition:.18s; }
+  .switch input:checked + .track { background:linear-gradient(90deg,#c79a23,#e8c659); }
+  .switch input:checked + .track::after { transform:translateX(17px); background:#1a1206; }
+
+  .addbtn { background:transparent; border:1px dashed var(--line); color:var(--gold); width:100%; padding:11px;
+    border-radius:11px; font-weight:600; }
+  .addbtn:hover { border-color:var(--accent); background:#d4af3708; transform:none; }
+
+  /* preview phone */
+  .preview { background:#0c0a06; border:1px solid var(--line2); border-radius:16px; padding:14px; position:sticky; top:80px; align-self:start; }
+  .preview-head { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700; margin-bottom:12px;
+    display:flex; align-items:center; gap:7px; }
+  .preview-head .dot { width:7px; height:7px; border-radius:50%; background:#5fd185; box-shadow:0 0 8px #5fd185; }
+  .chat { background:#0a0f0a; border-radius:12px; padding:12px; min-height:120px; max-height:380px; overflow:auto;
+    display:flex; flex-direction:column; gap:8px; background-image:radial-gradient(#14201499 1px, transparent 1px); background-size:16px 16px; }
+  .bubble { max-width:86%; padding:8px 11px; border-radius:12px; font-size:12.5px; line-height:1.45; }
+  .bubble.bot { align-self:flex-start; background:#1d2a1d; color:#e7f3e0; border-bottom-left-radius:4px; }
+  .bubble.sys { align-self:center; background:#2a2214; color:var(--gold); font-size:11px; padding:4px 10px; border-radius:999px; }
+  .chat .pempty { color:var(--faint); font-size:12px; text-align:center; padding:24px 8px; }
+
+  /* login gate */
+  .gate { max-width:420px; margin:60px auto; text-align:center; background:linear-gradient(180deg,#16110a,#100c07);
+    border:1px solid var(--line2); border-radius:18px; padding:36px 30px; box-shadow:var(--shadow); }
+  .gate .big { font-size:40px; margin-bottom:10px; }
+  .gate h3 { margin:0 0 8px; font-size:18px; }
+  .gate p { color:var(--muted); font-size:13.5px; margin:0 0 6px; }
 </style>
 </head>
 <body>
 <header>
+  <div class="app-title">Admissions</div>
   <div class="tabs">
-    <div class="tab active" id="tab-applications" onclick="showView('applications')">Candidatures</div>
-    <div class="tab" id="tab-programs" onclick="showView('programs')">Programmes</div>
+    <div class="tab active" id="tab-applications" onclick="showView('applications')">📋 Candidatures</div>
+    <div class="tab" id="tab-programs" onclick="showView('programs')">🎓 Programmes</div>
   </div>
   <div class="creds">
     <select id="uniPicker" onchange="pickUni()" title="Se connecter en tant qu'université">
@@ -98,10 +213,11 @@
   <div class="view active" id="view-applications">
     <div class="stats" id="stats"></div>
     <div class="bar">
-      <input id="search" placeholder="🔍 Rechercher (nom, téléphone, programme)…" oninput="render()" />
+      <div class="search-wrap"><span class="ico">🔍</span>
+        <input id="search" placeholder="Rechercher (nom, téléphone, programme)…" oninput="render()" /></div>
       <span class="grow"></span>
       <span class="count" id="count"></span>
-      <button class="ghost" onclick="loadList()">↻ Rafraîchir</button>
+      <button class="ghost sm" onclick="loadList()">↻ Rafraîchir</button>
     </div>
     <div id="tableWrap"></div>
   </div>
@@ -109,10 +225,11 @@
   <!-- ===== Vue Programmes ===== -->
   <div class="view" id="view-programs">
     <div class="bar">
-      <input id="psearch" placeholder="🔍 Rechercher un programme…" oninput="renderPrograms()" />
+      <div class="search-wrap"><span class="ico">🔍</span>
+        <input id="psearch" placeholder="Rechercher un programme…" oninput="renderPrograms()" /></div>
       <span class="grow"></span>
       <span class="count" id="pcount"></span>
-      <button class="ghost" onclick="loadPrograms()">↻ Rafraîchir</button>
+      <button class="ghost sm" onclick="loadPrograms()">↻ Rafraîchir</button>
     </div>
     <div id="progWrap"></div>
   </div>
@@ -125,7 +242,9 @@
 <script>
 const $ = (id) => document.getElementById(id);
 const DOC_TYPES = ["DIPLOME","RELEVE_NOTES","CARTE_IDENTITE","PHOTO","AUTRE"];
+const DOC_LABELS = { DIPLOME:"🎓 Diplôme", RELEVE_NOTES:"📊 Relevé de notes", CARTE_IDENTITE:"🪪 Carte d'identité", PHOTO:"📷 Photo d'identité", AUTRE:"📄 Autre" };
 const FIELD_TYPES = ["text","email","phone","number","date","select","textarea"];
+const FIELD_LABELS = { text:"Texte", email:"Email", phone:"Téléphone", number:"Nombre", date:"Date", select:"Liste", textarea:"Texte long" };
 const STATUS = {
   CHOOSING_UNIVERSITY:["En cours","b-collect"], CHOOSING_PROGRAM:["En cours","b-collect"],
   COLLECTING_FIELDS:["Saisie infos","b-collect"], COLLECTING_DOCUMENTS:["Collecte docs","b-collect"],
@@ -148,13 +267,16 @@ function showErr(m){ $('okBox').style.display='none'; const e=$('errBox'); e.tex
 function showOk(m){ $('errBox').style.display='none'; const e=$('okBox'); e.textContent=m; e.style.display='block'; setTimeout(()=>e.style.display='none',4000); }
 function clearMsg(){ $('errBox').style.display='none'; $('okBox').style.display='none'; }
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function initials(n){ if(!n) return '👤'; const p=n.trim().split(/\s+/); return ((p[0]||'')[0]||'').toUpperCase()+((p[1]||'')[0]||'').toUpperCase(); }
 
 function connect(){ localStorage.setItem('dash_key',$('apiKey').value.trim()); localStorage.setItem('dash_secret',$('apiSecret').value.trim()); loadList(); loadPrograms(); }
 function showView(v){ ['applications','programs'].forEach(x=>{ $('tab-'+x).classList.toggle('active',x===v); $('view-'+x).classList.toggle('active',x===v); }); clearMsg(); }
 
-function badge(status){ const [l,c]=STATUS[status]||[status,'b-collect']; return `<span class="badge ${c}">${l}</span>`; }
+function badge(status,nodot){ const [l,c]=STATUS[status]||[status,'b-collect']; return `<span class="badge ${c} ${nodot?'nodot':''}">${l}</span>`; }
 function fmtDate(s){ if(!s) return '—'; const d=new Date(s); return d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }
 function score(v){ return (v==null)?'—':Math.round(v*100)+'%'; }
+function scoreBar(v){ if(v==null) return '<span class="muted">—</span>'; const p=Math.round(v*100);
+  return `<div class="scorebar"><div class="track"><div class="fill" style="width:${p}%"></div></div><span class="pct">${p}%</span></div>`; }
 
 async function api(path, opts={}){
   const res = await fetch(path,{ ...opts, headers:{ ...headers(), ...(opts.headers||{}) } });
@@ -162,11 +284,13 @@ async function api(path, opts={}){
   if(!res.ok || body.success===false){ throw new Error(body?.error?.message || ('Erreur HTTP '+res.status)); }
   return body.data;
 }
+function gate(msg){ return `<div class="gate"><div class="big">🔐</div><h3>Connexion requise</h3>
+  <p>${esc(msg||"Saisissez votre API Key et API Secret, ou choisissez une université dans le menu en haut.")}</p></div>`; }
 
 /* ---------- Candidatures ---------- */
 async function loadList(){
   clearMsg(); const c=creds();
-  if(!c.k||!c.s){ showErr("Entrez votre API Key et API Secret puis Connexion."); return; }
+  if(!c.k||!c.s){ $('stats').innerHTML=''; $('tableWrap').innerHTML=gate(); $('count').textContent=''; return; }
   try { const d=await api('/api/v1/applications'); ALL=d.items; renderStats(); render(); }
   catch(e){ ALL=[]; showErr(e.message); $('tableWrap').innerHTML=''; $('stats').innerHTML=''; }
 }
@@ -183,12 +307,13 @@ function filtered(){
 }
 function render(){
   const items=filtered(); $('count').textContent=`${items.length} / ${ALL.length} candidature(s)`;
-  if(!items.length){ $('tableWrap').innerHTML='<div class="empty">Aucune candidature ne correspond.</div>'; return; }
+  if(!items.length){ $('tableWrap').innerHTML='<div class="card"><div class="empty"><div class="big">🗂️</div>Aucune candidature ne correspond.</div></div>'; return; }
   const rows=items.map(a=>`<tr class="click" onclick="openDetail('${a.id}')">
-    <td><b>${esc(a.student_name)||'<span class=muted>—</span>'}</b></td>
+    <td><div class="who"><div class="avatar">${esc(initials(a.student_name))}</div>
+      <span class="nm">${esc(a.student_name)||'<span class=muted>—</span>'}</span></div></td>
     <td class="muted">${esc(a.student_phone)}</td><td>${esc(a.program)||'<span class=muted>—</span>'}</td>
-    <td>${badge(a.status)}</td><td>${score(a.validation_score)}</td><td class="muted">${fmtDate(a.created_at)}</td></tr>`).join('');
-  $('tableWrap').innerHTML=`<table><thead><tr><th>Étudiant</th><th>Téléphone</th><th>Programme</th><th>Statut</th><th>Score</th><th>Créée le</th></tr></thead><tbody>${rows}</tbody></table>`;
+    <td>${badge(a.status)}</td><td>${scoreBar(a.validation_score)}</td><td class="muted">${fmtDate(a.created_at)}</td></tr>`).join('');
+  $('tableWrap').innerHTML=`<div class="card"><table><thead><tr><th>Étudiant</th><th>Téléphone</th><th>Programme</th><th>Statut</th><th>Score</th><th>Créée le</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 async function openDetail(id){
   clearMsg();
@@ -198,21 +323,24 @@ async function openDetail(id){
     const docs=(a.documents||[]).map(d=>{
       const ok=d.is_valid?'✅':'❌';
       const errs=(d.validation_errors||[]).length?`<div class="errs">${d.validation_errors.map(e=>'• '+esc(e)).join('<br>')}</div>`:'';
-      return `<div class="doc"><div class="top">${ok} <b>${esc(d.document_type)}</b><span class="muted" style="margin-left:auto">${fmtDate(d.uploaded_at)}</span></div>${errs}</div>`;
+      return `<div class="doc"><div class="top">${ok} <b>${esc(DOC_LABELS[d.document_type]||d.document_type)}</b><span class="muted" style="margin-left:auto">${fmtDate(d.uploaded_at)}</span></div>${errs}</div>`;
     }).join('')||'<div class="muted">Aucun document.</div>';
-    $('modal').innerHTML=`<div class="modal-head"><h2>${esc(a.student_name)||'Candidature'}</h2>${badge(a.status)}<span class="x" onclick="closeModal()">×</span></div>
+    $('modal').className='modal';
+    $('modal').innerHTML=`<div class="modal-head">
+        <div class="avatar">${esc(initials(a.student_name))}</div>
+        <h2>${esc(a.student_name)||'Candidature'}</h2>${badge(a.status)}<span class="x" onclick="closeModal()">×</span></div>
       <div class="modal-body">
         <div class="grid">
           <div><div class="k">Téléphone</div><div class="v">${esc(a.student_phone)||'—'}</div></div>
           <div><div class="k">Email</div><div class="v">${esc(a.student_email)||'—'}</div></div>
           <div><div class="k">Programme</div><div class="v">${esc(a.program)||'—'}</div></div>
-          <div><div class="k">Score</div><div class="v">${score(a.validation_score)}</div></div>
+          <div><div class="k">Score de validation</div><div class="v">${scoreBar(a.validation_score)}</div></div>
           <div><div class="k">Créée le</div><div class="v">${fmtDate(a.created_at)}</div></div>
           <div><div class="k">Décision le</div><div class="v">${fmtDate(a.decided_at)}</div></div>
         </div>
-        ${a.ai_notes?`<div class="ai-notes">${esc(a.ai_notes)}</div>`:''}
-        ${a.decision_comment?`<div class="section-title">Commentaire</div><div class="v">${esc(a.decision_comment)}</div>`:''}
-        <div class="section-title">Documents (${(a.documents||[]).length})</div>${docs}
+        ${a.ai_notes?`<div class="section-title">Analyse IA</div><div class="ai-notes">${esc(a.ai_notes)}</div>`:''}
+        ${a.decision_comment?`<div class="section-title">Commentaire de décision</div><div class="v">${esc(a.decision_comment)}</div>`:''}
+        <div class="section-title">Documents <span class="ct">${(a.documents||[]).length}</span></div>${docs}
         ${decided?'':`<div class="actions"><button class="green" onclick="decide('${a.id}','ACCEPTED')">✓ Accepter</button><button class="red" onclick="decide('${a.id}','REJECTED')">✗ Refuser</button></div>`}
       </div>`;
     $('overlay').classList.add('show');
@@ -229,7 +357,8 @@ function closeModal(){ $('overlay').classList.remove('show'); }
 
 /* ---------- Programmes / Formulaires ---------- */
 async function loadPrograms(){
-  clearMsg(); const c=creds(); if(!c.k||!c.s) return;
+  clearMsg(); const c=creds();
+  if(!c.k||!c.s){ $('progWrap').innerHTML=gate(); $('pcount').textContent=''; return; }
   try { PROGS=await api('/api/v1/admin/programs'); renderPrograms(); }
   catch(e){ PROGS=[]; showErr(e.message); $('progWrap').innerHTML=''; }
 }
@@ -237,64 +366,121 @@ function renderPrograms(){
   const t=($('psearch').value||'').trim().toLowerCase();
   const items=PROGS.filter(p=>!t || (p.name||'').toLowerCase().includes(t) || (p.domain||'').toLowerCase().includes(t));
   $('pcount').textContent=`${items.length} / ${PROGS.length} programme(s)`;
-  if(!items.length){ $('progWrap').innerHTML='<div class="empty">Aucun programme.</div>'; return; }
+  if(!items.length){ $('progWrap').innerHTML='<div class="card"><div class="empty"><div class="big">🎓</div>Aucun programme.</div></div>'; return; }
   const rows=items.map(p=>`<tr class="click" onclick="editForm('${p.id}','${esc(p.name).replace(/'/g,"&#39;")}')">
     <td><b>${esc(p.name)}</b></td><td class="muted">${esc(p.domain)||'—'}</td>
-    <td>${p.is_active?'<span class="badge b-valid">actif</span>':'<span class="badge b-draft">inactif</span>'}</td>
-    <td class="muted">Configurer le formulaire →</td></tr>`).join('');
-  $('progWrap').innerHTML=`<table><thead><tr><th>Programme</th><th>Domaine</th><th>État</th><th>Formulaire</th></tr></thead><tbody>${rows}</tbody></table>`;
+    <td>${p.is_active?'<span class="badge b-valid nodot">actif</span>':'<span class="badge b-draft nodot">inactif</span>'}</td>
+    <td><span class="muted">⚙️ Configurer le formulaire →</span></td></tr>`).join('');
+  $('progWrap').innerHTML=`<div class="card"><table><thead><tr><th>Programme</th><th>Domaine</th><th>État</th><th>Formulaire</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
+
 function fieldRow(f={}){
-  const opts=FIELD_TYPES.map(t=>`<option ${f.field_type===t?'selected':''}>${t}</option>`).join('');
-  return `<div class="erow">
-    <input class="f-label" placeholder="Libellé (ex: Date de naissance)" value="${esc(f.label)}"/>
-    <select class="f-type">${opts}</select>
-    <input class="f-regex" placeholder="regex (optionnel)" value="${esc(f.validation_regex)}"/>
-    <label><input type="checkbox" class="f-req" ${f.is_required===false?'':'checked'}/> requis</label>
-    <button class="del sm" onclick="this.closest('.erow').remove()">✕</button></div>`;
+  const opts=FIELD_TYPES.map(t=>`<option value="${t}" ${f.field_type===t?'selected':''}>${FIELD_LABELS[t]}</option>`).join('');
+  return `<div class="fcard">
+    <div class="ord"></div>
+    <div class="body">
+      <input class="lbl f-label" placeholder="Question posée à l'étudiant (ex : Date de naissance)" value="${esc(f.label)}"/>
+      <div class="line">
+        <select class="f-type" title="Type de réponse">${opts}</select>
+        <input class="small f-regex" placeholder="Format attendu — regex (optionnel)" value="${esc(f.validation_regex)}"/>
+        <label class="switch"><input type="checkbox" class="f-req" ${f.is_required===false?'':'checked'}/><span class="track"></span>Requis</label>
+      </div>
+    </div>
+    <button class="del" title="Supprimer" onclick="removeRow(this)">🗑</button>
+  </div>`;
 }
 function docRow(d={}){
-  const opts=DOC_TYPES.map(t=>`<option ${d.document_type===t?'selected':''}>${t}</option>`).join('');
-  return `<div class="erow">
-    <select class="d-type">${opts}</select>
-    <input class="d-label" placeholder="Libellé (ex: Votre diplôme)" value="${esc(d.label)}"/>
-    <label><input type="checkbox" class="d-req" ${d.is_required===false?'':'checked'}/> requis</label>
-    <button class="del sm" onclick="this.closest('.erow').remove()">✕</button></div>`;
+  const opts=DOC_TYPES.map(t=>`<option value="${t}" ${d.document_type===t?'selected':''}>${DOC_LABELS[t]}</option>`).join('');
+  return `<div class="fcard">
+    <div class="ord"></div>
+    <div class="body">
+      <div class="line">
+        <select class="d-type" title="Type de document">${opts}</select>
+        <input class="small d-label" placeholder="Libellé montré à l'étudiant (ex : Votre diplôme)" value="${esc(d.label)}"/>
+        <label class="switch"><input type="checkbox" class="d-req" ${d.is_required===false?'':'checked'}/><span class="track"></span>Requis</label>
+      </div>
+    </div>
+    <button class="del" title="Supprimer" onclick="removeRow(this)">🗑</button>
+  </div>`;
 }
+function renumber(){
+  document.querySelectorAll('#fields .fcard .ord').forEach((o,i)=>o.textContent=i+1);
+  document.querySelectorAll('#docs .fcard .ord').forEach((o,i)=>o.textContent=i+1);
+}
+function addField(){ $('fields').insertAdjacentHTML('beforeend', fieldRow()); renumber(); renderFormPreview(); }
+function addDoc(){ $('docs').insertAdjacentHTML('beforeend', docRow()); renumber(); renderFormPreview(); }
+function removeRow(btn){ btn.closest('.fcard').remove(); renumber(); renderFormPreview(); }
+
 async function editForm(programId, name){
   clearMsg();
   let form={fields:[],required_documents:[],is_published:false};
   try { form=await api('/api/v1/admin/forms/'+programId); }
-  catch(e){ /* 404 = pas encore de formulaire → on part d'un brouillon vide */ }
+  catch(e){ /* 404 = pas encore de formulaire → brouillon vide */ }
   const pub = form.is_published;
-  $('modal').innerHTML=`<div class="modal-head"><h2>📝 ${esc(name)}</h2>
-      <span class="badge ${pub?'b-pub':'b-draft'}">${pub?'publié':'brouillon'}</span>
+  const fieldsHtml=(form.fields||[]).slice().sort((a,b)=>a.order-b.order).map(fieldRow).join('');
+  const docsHtml=(form.required_documents||[]).slice().sort((a,b)=>a.order-b.order).map(docRow).join('');
+  $('modal').className='modal wide';
+  $('modal').innerHTML=`<div class="modal-head"><h2>⚙️ ${esc(name)}</h2>
+      <span class="badge ${pub?'b-pub':'b-draft'} nodot">${pub?'publié':'brouillon'}</span>
       <span class="x" onclick="closeModal()">×</span></div>
     <div class="modal-body">
-      <div class="section-title">Champs à remplir par l'étudiant
-        <button class="sm" onclick="document.getElementById('fields').insertAdjacentHTML('beforeend', window.__fieldRow())">+ champ</button></div>
-      <div id="fields">${(form.fields||[]).sort((a,b)=>a.order-b.order).map(fieldRow).join('')}</div>
-      <div class="section-title">Documents requis
-        <button class="sm" onclick="document.getElementById('docs').insertAdjacentHTML('beforeend', window.__docRow())">+ document</button></div>
-      <div id="docs">${(form.required_documents||[]).sort((a,b)=>a.order-b.order).map(docRow).join('')}</div>
+      <div class="form-layout">
+        <div>
+          <div class="section-title">📝 Informations à demander<span class="grow"></span></div>
+          <div class="hint">Questions posées une par une à l'étudiant sur WhatsApp, dans l'ordre.</div>
+          <div id="fields" oninput="renderFormPreview()" onchange="renderFormPreview()">${fieldsHtml}</div>
+          <button class="addbtn" onclick="addField()">＋ Ajouter une information</button>
+
+          <div class="section-title" style="margin-top:24px">📎 Documents à fournir<span class="grow"></span></div>
+          <div class="hint">Pièces que l'étudiant devra envoyer (analysées par l'IA).</div>
+          <div id="docs" oninput="renderFormPreview()" onchange="renderFormPreview()">${docsHtml}</div>
+          <button class="addbtn" onclick="addDoc()">＋ Ajouter un document</button>
+        </div>
+
+        <div class="preview">
+          <div class="preview-head"><span class="dot"></span> Aperçu — côté étudiant</div>
+          <div class="chat" id="formPreview"></div>
+        </div>
+      </div>
+
       <div class="actions">
         <button class="green" onclick="saveForm('${programId}', ${pub})">💾 Enregistrer & publier</button>
         <button class="ghost" onclick="closeModal()">Annuler</button>
-        <span class="muted" style="font-size:12px;align-self:center">L'étudiant verra ces champs/documents pour ce programme.</span>
+        <span class="muted" style="font-size:12px">Ces champs et documents seront demandés par le bot pour ce programme.</span>
       </div>
     </div>`;
   $('overlay').classList.add('show');
+  renumber(); renderFormPreview();
 }
-window.__fieldRow=()=>fieldRow(); window.__docRow=()=>docRow();
+
+function renderFormPreview(){
+  const {fields, required_documents}=collectForm();
+  let html='';
+  if(!fields.length && !required_documents.length){
+    $('formPreview').innerHTML='<div class="pempty">Ajoutez des informations ou des documents pour visualiser ce que verra l\'étudiant. 👇</div>';
+    return;
+  }
+  html+='<div class="bubble bot">👋 Bienvenue ! Constituons votre dossier.</div>';
+  if(fields.length){
+    html+='<div class="bubble sys">Informations</div>';
+    fields.forEach(f=>{ html+=`<div class="bubble bot">📝 ${esc(f.label)}${f.is_required?'':' <i style="opacity:.6">(facultatif)</i>'}</div>`; });
+  }
+  if(required_documents.length){
+    html+='<div class="bubble sys">Documents</div>';
+    required_documents.forEach(d=>{ html+=`<div class="bubble bot">📎 Envoyez : <b>${esc(d.label||DOC_LABELS[d.document_type])}</b>${d.is_required?'':' <i style="opacity:.6">(facultatif)</i>'}</div>`; });
+  }
+  html+='<div class="bubble bot">✅ Merci ! Votre dossier est en cours de validation.</div>';
+  $('formPreview').innerHTML=html;
+}
 
 function collectForm(){
-  const fields=[...document.querySelectorAll('#fields .erow')].map((r,i)=>({
+  const fields=[...document.querySelectorAll('#fields .fcard')].map((r,i)=>({
     label:r.querySelector('.f-label').value.trim(),
     field_type:r.querySelector('.f-type').value,
     validation_regex:r.querySelector('.f-regex').value.trim()||null,
     is_required:r.querySelector('.f-req').checked, order:i,
   })).filter(f=>f.label);
-  const required_documents=[...document.querySelectorAll('#docs .erow')].map((r,i)=>({
+  const required_documents=[...document.querySelectorAll('#docs .fcard')].map((r,i)=>({
     document_type:r.querySelector('.d-type').value,
     label:r.querySelector('.d-label').value.trim()||r.querySelector('.d-type').value,
     is_required:r.querySelector('.d-req').checked, order:i,
@@ -331,7 +517,8 @@ function pickUni(){
 }
 
 /* init */
-(function(){ const c=creds(); $('apiKey').value=c.k; $('apiSecret').value=c.s; loadUniPicker(); if(c.k&&c.s){ loadList(); loadPrograms(); } })();
+(function(){ const c=creds(); $('apiKey').value=c.k; $('apiSecret').value=c.s; loadUniPicker();
+  if(c.k&&c.s){ loadList(); loadPrograms(); } else { $('tableWrap').innerHTML=gate(); } })();
 </script>
 </body>
 </html>
