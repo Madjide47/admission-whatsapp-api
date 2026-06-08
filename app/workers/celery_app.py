@@ -69,3 +69,10 @@ celery_app.conf.update(
         },
     },
 )
+
+# CRITIQUE : fait de `celery_app` l'app Celery par défaut du processus.
+# Sans ça, les `@shared_task` lancés depuis l'API (process qui n'est PAS démarré
+# via `celery -A ...`) se lient à l'app « default » SANS task_routes : les tâches
+# partent dans la queue « celery » que personne ne consomme (OCR, IA, notifications
+# de décision jamais traités). `set_default()` garantit le routage partout.
+celery_app.set_default()

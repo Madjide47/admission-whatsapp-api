@@ -124,6 +124,76 @@ def dispatch_decision_acknowledged_task(application_id: str) -> str:
 # ----------------------------------------------------------------------
 # Envoi effectif avec retry exponentiel
 # ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+# Notification WhatsApp de décision à l'étudiant (avec retry)
+# ----------------------------------------------------------------------
+@shared_task(
+    bind=True,
+    name="app.workers.webhook_tasks.notify_student_decision",
+    max_retries=len(RETRY_DELAYS),
+)
+def notify_student_decision_task(self, application_id: str) -> str:
+    """Envoie au candidat la décision de l'université, avec retry exponentiel.
+
+    Auparavant l'envoi était inline dans l'endpoint /decision : un échec Twilio
+    passager (quota 429, réseau) perdait définitivement la notification. Ici on
+    rejoue 1min → 5min → 15min → 1h → 6h jusqu'à livraison.
+    """
+    db = get_db_session()
+    try:
+        application = db.get(Application, uuid.UUID(application_id))
+        if application is None:
+            logger.error("Application introuvable pour notif décision: %s", application_id)
+            return "no_application"
+
+        if application.status not in (ApplicationStatus.ACCEPTED, ApplicationStatus.REJECTED):
+            logger.info(
+                "App %s non décidée (%s) — notification ignorée",
+                application.id,
+                application.status.value,
+            )
+            return "skipped"
+
+        from app.services.whatsapp_bot import WhatsAppBot
+
+        bot = WhatsAppBot(db)
+        sid = bot.notify_decision(
+            to_number=application.student_phone,
+            decision=application.status,
+            comment=application.decision_comment,
+        )
+
+        if sid:
+            logger.info(
+                "Notification décision envoyée à %s (sid=%s)",
+                application.student_phone,
+                sid,
+            )
+            return "sent"
+
+        # Envoi échoué — replanifier si on a encore des tentatives
+        attempt_index = self.request.retries  # 0 au 1er échec
+        if attempt_index < len(RETRY_DELAYS):
+            delay = RETRY_DELAYS[attempt_index]
+            logger.info(
+                "Notif décision %s replanifiée dans %ds (tentative %d/%d)",
+                application.id,
+                delay,
+                attempt_index + 1,
+                len(RETRY_DELAYS),
+            )
+            raise self.retry(countdown=delay, exc=Exception("Notification WhatsApp échouée"))
+
+        logger.error(
+            "Notif décision %s définitivement échouée après %d tentatives",
+            application.id,
+            len(RETRY_DELAYS),
+        )
+        return "exhausted"
+    finally:
+        db.close()
+
+
 @shared_task(bind=True, name="app.workers.webhook_tasks.send_webhook", max_retries=len(RETRY_DELAYS))
 def send_webhook_task(self, delivery_id: str) -> str:
     """Envoie un webhook et le replanifie en cas d'échec."""

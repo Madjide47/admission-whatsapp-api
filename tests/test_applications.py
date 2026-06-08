@@ -95,10 +95,11 @@ def test_patch_application(client, auth_headers):
 
 @pytest.mark.parametrize("decision", ["ACCEPTED", "REJECTED"])
 def test_submit_decision(client, auth_headers, decision, monkeypatch):
-    # Mock Twilio + Celery (Twilio est déjà inactif via env de test, Celery aussi)
-    from app.api.v1 import decisions as decisions_module
-
-    monkeypatch.setattr(decisions_module, "_notify_student_decision", lambda *a, **k: None)
+    # Notification + accusé webhook sont des tâches Celery asynchrones — on les neutralise.
+    monkeypatch.setattr(
+        "app.workers.webhook_tasks.notify_student_decision_task.delay",
+        lambda *a, **k: None,
+    )
     monkeypatch.setattr(
         "app.workers.webhook_tasks.dispatch_decision_acknowledged_task.delay",
         lambda *a, **k: None,

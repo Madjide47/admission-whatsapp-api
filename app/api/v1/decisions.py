@@ -75,36 +75,18 @@ def submit_decision(
     db.commit()
     db.refresh(application)
 
-    # Notification WhatsApp asynchrone à l'étudiant
-    from app.workers.ai_tasks import check_application_completion_task  # noqa: F401
-    from app.workers.webhook_tasks import dispatch_decision_acknowledged_task
+    # Notification WhatsApp à l'étudiant + accusé webhook — tous deux asynchrones
+    # avec retry (file « webhooks »). La notification n'est donc plus perdue si
+    # Twilio échoue ponctuellement (quota 429, réseau) : elle est rejouée.
+    from app.workers.webhook_tasks import (
+        dispatch_decision_acknowledged_task,
+        notify_student_decision_task,
+    )
 
-    # Démarrage notification + accusé webhook
-    _notify_student_decision(application)
+    notify_student_decision_task.delay(str(application.id))
     dispatch_decision_acknowledged_task.delay(str(application.id))
 
     return {
         "success": True,
         "data": ApplicationRead.model_validate(application).model_dump(mode="json"),
     }
-
-
-def _notify_student_decision(application: Application) -> None:
-    """Notifie l'étudiant via WhatsApp — exécuté inline (réponse rapide attendue).
-
-    On utilise le bot Twilio directement ; pour de gros volumes, on pourrait
-    déplacer cet appel dans un worker Celery dédié.
-    """
-    from app.database import get_db_session
-    from app.services.whatsapp_bot import WhatsAppBot
-
-    session = get_db_session()
-    try:
-        bot = WhatsAppBot(session)
-        bot.notify_decision(
-            to_number=application.student_phone,
-            decision=application.status,
-            comment=application.decision_comment,
-        )
-    finally:
-        session.close()

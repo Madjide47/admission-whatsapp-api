@@ -783,8 +783,11 @@ class WhatsAppBot:
             msg = self.client.messages.create(body=text, from_=self.from_number, to=to)
             logger.info("Message WhatsApp envoyé à %s (sid=%s)", to, msg.sid)
             return msg.sid
-        except TwilioRestException as e:
-            logger.exception("Erreur envoi Twilio: %s", e)
+        except Exception as e:
+            # On capture TOUTE erreur d'envoi (TwilioRestException quota 429,
+            # mais aussi erreurs réseau/DNS, timeouts…) : send_message ne doit
+            # jamais crasher, et retourner None permet le retry côté tâche Celery.
+            logger.exception("Erreur envoi WhatsApp à %s: %s", to, e)
             return None
 
     def send_document_request(self, to_number: str, doc_type: DocumentType) -> None:
@@ -796,8 +799,14 @@ class WhatsAppBot:
             "📎 Vous pouvez joindre un PDF ou une photo directement à WhatsApp.",
         )
 
-    def notify_decision(self, to_number: str, decision: ApplicationStatus, comment: str | None) -> None:
-        """Notifie l'étudiant de la décision finale de l'université."""
+    def notify_decision(
+        self, to_number: str, decision: ApplicationStatus, comment: str | None
+    ) -> str | None:
+        """Notifie l'étudiant de la décision finale de l'université.
+
+        Retourne le SID Twilio en cas de succès, ``None`` si l'envoi a échoué
+        (permet à la tâche Celery appelante de décider d'un retry).
+        """
         if decision == ApplicationStatus.ACCEPTED:
             text = "🎉 *Félicitations !* Votre candidature a été acceptée."
         elif decision == ApplicationStatus.REJECTED:
@@ -811,7 +820,7 @@ class WhatsAppBot:
         if comment:
             text += f"\n\n💬 Commentaire de l'université :\n{comment}"
 
-        self.send_message(to_number, text)
+        return self.send_message(to_number, text)
 
     # ------------------------------------------------------------------
     # Helpers
