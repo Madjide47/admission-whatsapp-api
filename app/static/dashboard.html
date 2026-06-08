@@ -11,68 +11,75 @@
     --green:#22c55e; --red:#ef4444; --amber:#f59e0b; --blue:#3b82f6;
   }
   * { box-sizing:border-box; }
-  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-         background:var(--bg); color:var(--txt); }
-  header { background:var(--panel); border-bottom:1px solid var(--line);
-           padding:14px 22px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--txt); }
+  header { background:var(--panel); border-bottom:1px solid var(--line); padding:14px 22px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
   header h1 { font-size:18px; margin:0; font-weight:650; }
-  header .sub { color:var(--muted); font-size:13px; }
+  .tabs { display:flex; gap:4px; margin-left:8px; }
+  .tab { padding:7px 14px; border-radius:8px; cursor:pointer; color:var(--muted); font-size:14px; font-weight:550; }
+  .tab.active { background:var(--panel2); color:var(--txt); }
   .creds { margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   input, button, select { font-family:inherit; font-size:13px; }
-  input { background:var(--panel2); border:1px solid var(--line); color:var(--txt);
-          padding:7px 10px; border-radius:8px; width:200px; }
-  button { background:var(--accent); color:#fff; border:0; padding:8px 14px;
-           border-radius:8px; cursor:pointer; font-weight:550; }
+  input, select { background:var(--panel2); border:1px solid var(--line); color:var(--txt); padding:7px 10px; border-radius:8px; }
+  header input { width:190px; }
+  button { background:var(--accent); color:#fff; border:0; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:550; }
   button:hover { background:var(--accent2); }
   button.ghost { background:transparent; border:1px solid var(--line); color:var(--txt); }
-  button.green { background:var(--green); } button.red { background:var(--red); }
+  button.green { background:var(--green); } button.red { background:var(--red); } button.sm { padding:5px 9px; font-size:12px; }
   main { padding:22px; max-width:1100px; margin:0 auto; }
-  .bar { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+  .view { display:none; } .view.active { display:block; }
+  .stats { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+  .chip { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px 16px; cursor:pointer; min-width:96px; transition:.12s; }
+  .chip:hover { border-color:var(--accent); }
+  .chip.active { border-color:var(--accent); background:var(--panel2); box-shadow:0 0 0 1px var(--accent); }
+  .chip .n { font-size:22px; font-weight:700; }
+  .chip .l { font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+  .chip.s-all .n{color:var(--txt);} .chip.s-progress .n{color:#93c5fd;}
+  .chip.s-validated .n{color:#86efac;} .chip.s-accepted .n{color:#4ade80;} .chip.s-rejected .n{color:#fca5a5;}
+  .bar { display:flex; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+  .bar .grow { flex:1; }
+  #search { width:100%; max-width:320px; }
   .bar .count { color:var(--muted); font-size:13px; }
   table { width:100%; border-collapse:collapse; background:var(--panel); border-radius:12px; overflow:hidden; }
   th, td { text-align:left; padding:11px 14px; border-bottom:1px solid var(--line); font-size:14px; }
   th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
-  tbody tr { cursor:pointer; }
-  tbody tr:hover { background:var(--panel2); }
+  tbody tr.click { cursor:pointer; } tbody tr.click:hover { background:var(--panel2); }
   .badge { display:inline-block; padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:650; }
-  .b-collect { background:#1e3a8a33; color:#93c5fd; }
-  .b-valid { background:#14532d44; color:#86efac; }
-  .b-pending { background:#78350f44; color:#fcd34d; }
-  .b-accept { background:#14532d66; color:#4ade80; }
-  .b-reject { background:#7f1d1d55; color:#fca5a5; }
-  .b-sent { background:#312e8155; color:#a5b4fc; }
+  .b-collect { background:#1e3a8a33; color:#93c5fd; } .b-valid { background:#14532d44; color:#86efac; }
+  .b-pending { background:#78350f44; color:#fcd34d; } .b-accept { background:#14532d66; color:#4ade80; }
+  .b-reject { background:#7f1d1d55; color:#fca5a5; } .b-sent { background:#312e8155; color:#a5b4fc; }
+  .b-pub { background:#14532d44; color:#86efac; } .b-draft { background:#3f3f4644; color:#cbd5e1; }
   .muted { color:var(--muted); }
   .empty { text-align:center; color:var(--muted); padding:50px; }
-  /* modal */
-  .overlay { position:fixed; inset:0; background:#0008; display:none; align-items:flex-start;
-             justify-content:center; padding:40px 16px; overflow:auto; }
+  .overlay { position:fixed; inset:0; background:#0008; display:none; align-items:flex-start; justify-content:center; padding:40px 16px; overflow:auto; }
   .overlay.show { display:flex; }
-  .modal { background:var(--panel); border:1px solid var(--line); border-radius:16px;
-           width:100%; max-width:720px; }
+  .modal { background:var(--panel); border:1px solid var(--line); border-radius:16px; width:100%; max-width:760px; }
   .modal-head { padding:18px 22px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px; }
   .modal-head h2 { margin:0; font-size:18px; }
   .modal-head .x { margin-left:auto; cursor:pointer; color:var(--muted); font-size:22px; line-height:1; }
   .modal-body { padding:22px; }
   .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 24px; margin-bottom:18px; }
-  .grid .k { color:var(--muted); font-size:12px; }
-  .grid .v { font-size:14px; margin-bottom:6px; }
-  .doc { background:var(--panel2); border:1px solid var(--line); border-radius:10px;
-         padding:12px 14px; margin-bottom:10px; }
-  .doc .top { display:flex; align-items:center; gap:8px; }
-  .doc .errs { color:#fca5a5; font-size:12.5px; margin-top:6px; }
-  .section-title { font-size:13px; text-transform:uppercase; letter-spacing:.04em;
-                   color:var(--muted); margin:18px 0 10px; }
-  .actions { display:flex; gap:10px; margin-top:18px; }
-  .err-box { background:#7f1d1d44; border:1px solid #b91c1c; color:#fecaca;
-             padding:10px 14px; border-radius:10px; margin-bottom:14px; font-size:13px; display:none; }
-  .ai-notes { background:var(--panel2); border-left:3px solid var(--accent); padding:10px 14px;
-              border-radius:8px; font-size:13.5px; white-space:pre-wrap; }
+  .grid .k { color:var(--muted); font-size:12px; } .grid .v { font-size:14px; margin-bottom:6px; }
+  .doc { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:10px; }
+  .doc .top { display:flex; align-items:center; gap:8px; } .doc .errs { color:#fca5a5; font-size:12.5px; margin-top:6px; }
+  .section-title { font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:18px 0 10px; display:flex; align-items:center; gap:10px; }
+  .actions { display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; }
+  .err-box { background:#7f1d1d44; border:1px solid #b91c1c; color:#fecaca; padding:10px 14px; border-radius:10px; margin-bottom:14px; font-size:13px; display:none; }
+  .ok-box { background:#14532d44; border:1px solid #15803d; color:#bbf7d0; padding:10px 14px; border-radius:10px; margin-bottom:14px; font-size:13px; display:none; }
+  .ai-notes { background:var(--panel2); border-left:3px solid var(--accent); padding:10px 14px; border-radius:8px; font-size:13.5px; white-space:pre-wrap; }
+  /* éditeur de formulaire */
+  .erow { display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
+  .erow input { flex:1; min-width:120px; } .erow select { min-width:130px; }
+  .erow label { font-size:12.5px; color:var(--muted); display:flex; align-items:center; gap:5px; white-space:nowrap; }
+  .erow .del { background:#7f1d1d; padding:6px 9px; }
 </style>
 </head>
 <body>
 <header>
   <h1>🎓 Admissions</h1>
-  <span class="sub">Tableau de bord interne</span>
+  <div class="tabs">
+    <div class="tab active" id="tab-applications" onclick="showView('applications')">Candidatures</div>
+    <div class="tab" id="tab-programs" onclick="showView('programs')">Programmes</div>
+  </div>
   <div class="creds">
     <input id="apiKey" placeholder="X-API-Key (univ_…)" autocomplete="off" />
     <input id="apiSecret" type="password" placeholder="X-API-Secret (sk_…)" autocomplete="off" />
@@ -82,11 +89,30 @@
 
 <main>
   <div id="errBox" class="err-box"></div>
-  <div class="bar">
-    <button class="ghost" onclick="loadList()">↻ Rafraîchir</button>
-    <span class="count" id="count"></span>
+  <div id="okBox" class="ok-box"></div>
+
+  <!-- ===== Vue Candidatures ===== -->
+  <div class="view active" id="view-applications">
+    <div class="stats" id="stats"></div>
+    <div class="bar">
+      <input id="search" placeholder="🔍 Rechercher (nom, téléphone, programme)…" oninput="render()" />
+      <span class="grow"></span>
+      <span class="count" id="count"></span>
+      <button class="ghost" onclick="loadList()">↻ Rafraîchir</button>
+    </div>
+    <div id="tableWrap"></div>
   </div>
-  <div id="tableWrap"></div>
+
+  <!-- ===== Vue Programmes ===== -->
+  <div class="view" id="view-programs">
+    <div class="bar">
+      <input id="psearch" placeholder="🔍 Rechercher un programme…" oninput="renderPrograms()" />
+      <span class="grow"></span>
+      <span class="count" id="pcount"></span>
+      <button class="ghost" onclick="loadPrograms()">↻ Rafraîchir</button>
+    </div>
+    <div id="progWrap"></div>
+  </div>
 </main>
 
 <div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
@@ -95,6 +121,8 @@
 
 <script>
 const $ = (id) => document.getElementById(id);
+const DOC_TYPES = ["DIPLOME","RELEVE_NOTES","CARTE_IDENTITE","PHOTO","AUTRE"];
+const FIELD_TYPES = ["text","email","phone","number","date","select","textarea"];
 const STATUS = {
   CHOOSING_UNIVERSITY:["En cours","b-collect"], CHOOSING_PROGRAM:["En cours","b-collect"],
   COLLECTING_FIELDS:["Saisie infos","b-collect"], COLLECTING_DOCUMENTS:["Collecte docs","b-collect"],
@@ -102,127 +130,187 @@ const STATUS = {
   PENDING_ENROLLMENT:["Attente inscription","b-pending"], SENT_TO_UNIVERSITY:["Envoyé","b-sent"],
   ACCEPTED:["Accepté","b-accept"], REJECTED:["Refusé","b-reject"],
 };
+const GROUPS = {
+  all:{label:"Total",match:()=>true},
+  progress:{label:"En cours",match:s=>["CHOOSING_UNIVERSITY","CHOOSING_PROGRAM","COLLECTING_FIELDS","COLLECTING_DOCUMENTS","VALIDATING","PENDING_ENROLLMENT","SENT_TO_UNIVERSITY"].includes(s)},
+  validated:{label:"Validé",match:s=>s==="VALIDATED"},
+  accepted:{label:"Accepté",match:s=>s==="ACCEPTED"},
+  rejected:{label:"Refusé",match:s=>s==="REJECTED"},
+};
+let ALL=[], PROGS=[], activeGroup='all';
 
 function creds(){ return { k:localStorage.getItem('dash_key')||'', s:localStorage.getItem('dash_secret')||'' }; }
 function headers(){ const c=creds(); return { 'X-API-Key':c.k, 'X-API-Secret':c.s }; }
-function showErr(m){ const e=$('errBox'); e.textContent=m; e.style.display='block'; }
-function clearErr(){ $('errBox').style.display='none'; }
+function showErr(m){ $('okBox').style.display='none'; const e=$('errBox'); e.textContent=m; e.style.display='block'; }
+function showOk(m){ $('errBox').style.display='none'; const e=$('okBox'); e.textContent=m; e.style.display='block'; setTimeout(()=>e.style.display='none',4000); }
+function clearMsg(){ $('errBox').style.display='none'; $('okBox').style.display='none'; }
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-function connect(){
-  localStorage.setItem('dash_key', $('apiKey').value.trim());
-  localStorage.setItem('dash_secret', $('apiSecret').value.trim());
-  loadList();
-}
+function connect(){ localStorage.setItem('dash_key',$('apiKey').value.trim()); localStorage.setItem('dash_secret',$('apiSecret').value.trim()); loadList(); loadPrograms(); }
+function showView(v){ ['applications','programs'].forEach(x=>{ $('tab-'+x).classList.toggle('active',x===v); $('view-'+x).classList.toggle('active',x===v); }); clearMsg(); }
 
-function badge(status){
-  const [label,cls] = STATUS[status] || [status,'b-collect'];
-  return `<span class="badge ${cls}">${label}</span>`;
-}
-function fmtDate(s){ if(!s) return '—'; const d=new Date(s);
-  return d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }
+function badge(status){ const [l,c]=STATUS[status]||[status,'b-collect']; return `<span class="badge ${c}">${l}</span>`; }
+function fmtDate(s){ if(!s) return '—'; const d=new Date(s); return d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }
 function score(v){ return (v==null)?'—':Math.round(v*100)+'%'; }
 
 async function api(path, opts={}){
-  const res = await fetch(path, { ...opts, headers:{ ...headers(), ...(opts.headers||{}) } });
+  const res = await fetch(path,{ ...opts, headers:{ ...headers(), ...(opts.headers||{}) } });
   const body = await res.json().catch(()=>({}));
-  if(!res.ok || body.success===false){
-    const msg = body?.error?.message || ('Erreur HTTP '+res.status);
-    throw new Error(msg);
-  }
+  if(!res.ok || body.success===false){ throw new Error(body?.error?.message || ('Erreur HTTP '+res.status)); }
   return body.data;
 }
 
+/* ---------- Candidatures ---------- */
 async function loadList(){
-  clearErr();
-  const c=creds();
-  if(!c.k || !c.s){ showErr("Entrez votre API Key et API Secret puis cliquez sur Connexion."); return; }
-  try {
-    const data = await api('/api/v1/applications');
-    renderTable(data.items);
-    $('count').textContent = `${data.count} candidature(s)`;
-  } catch(e){ showErr(e.message); $('tableWrap').innerHTML=''; $('count').textContent=''; }
+  clearMsg(); const c=creds();
+  if(!c.k||!c.s){ showErr("Entrez votre API Key et API Secret puis Connexion."); return; }
+  try { const d=await api('/api/v1/applications'); ALL=d.items; renderStats(); render(); }
+  catch(e){ ALL=[]; showErr(e.message); $('tableWrap').innerHTML=''; $('stats').innerHTML=''; }
 }
-
-function renderTable(items){
-  if(!items.length){ $('tableWrap').innerHTML='<div class="empty">Aucune candidature pour le moment.</div>'; return; }
-  const rows = items.map(a => `
-    <tr onclick="openDetail('${a.id}')">
-      <td><b>${a.student_name||'<span class=muted>—</span>'}</b></td>
-      <td class="muted">${a.student_phone||''}</td>
-      <td>${a.program||'<span class=muted>—</span>'}</td>
-      <td>${badge(a.status)}</td>
-      <td>${score(a.validation_score)}</td>
-      <td class="muted">${fmtDate(a.created_at)}</td>
-    </tr>`).join('');
-  $('tableWrap').innerHTML = `<table>
-    <thead><tr><th>Étudiant</th><th>Téléphone</th><th>Programme</th><th>Statut</th><th>Score</th><th>Créée le</th></tr></thead>
-    <tbody>${rows}</tbody></table>`;
+function renderStats(){
+  $('stats').innerHTML = Object.entries(GROUPS).map(([k,g])=>{
+    const n=ALL.filter(a=>g.match(a.status)).length;
+    return `<div class="chip s-${k} ${activeGroup===k?'active':''}" onclick="setGroup('${k}')"><div class="n">${n}</div><div class="l">${g.label}</div></div>`;
+  }).join('');
 }
-
+function setGroup(k){ activeGroup=k; renderStats(); render(); }
+function filtered(){
+  const t=$('search').value.trim().toLowerCase(), g=GROUPS[activeGroup];
+  return ALL.filter(a=>g.match(a.status) && (!t || (a.student_name||'').toLowerCase().includes(t) || (a.student_phone||'').toLowerCase().includes(t) || (a.program||'').toLowerCase().includes(t)));
+}
+function render(){
+  const items=filtered(); $('count').textContent=`${items.length} / ${ALL.length} candidature(s)`;
+  if(!items.length){ $('tableWrap').innerHTML='<div class="empty">Aucune candidature ne correspond.</div>'; return; }
+  const rows=items.map(a=>`<tr class="click" onclick="openDetail('${a.id}')">
+    <td><b>${esc(a.student_name)||'<span class=muted>—</span>'}</b></td>
+    <td class="muted">${esc(a.student_phone)}</td><td>${esc(a.program)||'<span class=muted>—</span>'}</td>
+    <td>${badge(a.status)}</td><td>${score(a.validation_score)}</td><td class="muted">${fmtDate(a.created_at)}</td></tr>`).join('');
+  $('tableWrap').innerHTML=`<table><thead><tr><th>Étudiant</th><th>Téléphone</th><th>Programme</th><th>Statut</th><th>Score</th><th>Créée le</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
 async function openDetail(id){
-  clearErr();
+  clearMsg();
   try {
-    const a = await api('/api/v1/applications/'+id);
-    const decided = ['ACCEPTED','REJECTED'].includes(a.status);
-    const docs = (a.documents||[]).map(d => {
-      const ok = d.is_valid ? '✅' : '❌';
-      const errs = (d.validation_errors||[]).length
-        ? `<div class="errs">${d.validation_errors.map(e=>'• '+e).join('<br>')}</div>` : '';
-      return `<div class="doc"><div class="top">${ok} <b>${d.document_type}</b>
-              <span class="muted" style="margin-left:auto">${fmtDate(d.uploaded_at)}</span></div>${errs}</div>`;
-    }).join('') || '<div class="muted">Aucun document.</div>';
-
-    $('modal').innerHTML = `
-      <div class="modal-head">
-        <h2>${a.student_name||'Candidature'}</h2>${badge(a.status)}
-        <span class="x" onclick="closeModal()">×</span>
-      </div>
+    const a=await api('/api/v1/applications/'+id);
+    const decided=['ACCEPTED','REJECTED'].includes(a.status);
+    const docs=(a.documents||[]).map(d=>{
+      const ok=d.is_valid?'✅':'❌';
+      const errs=(d.validation_errors||[]).length?`<div class="errs">${d.validation_errors.map(e=>'• '+esc(e)).join('<br>')}</div>`:'';
+      return `<div class="doc"><div class="top">${ok} <b>${esc(d.document_type)}</b><span class="muted" style="margin-left:auto">${fmtDate(d.uploaded_at)}</span></div>${errs}</div>`;
+    }).join('')||'<div class="muted">Aucun document.</div>';
+    $('modal').innerHTML=`<div class="modal-head"><h2>${esc(a.student_name)||'Candidature'}</h2>${badge(a.status)}<span class="x" onclick="closeModal()">×</span></div>
       <div class="modal-body">
         <div class="grid">
-          <div><div class="k">Téléphone</div><div class="v">${a.student_phone||'—'}</div></div>
-          <div><div class="k">Email</div><div class="v">${a.student_email||'—'}</div></div>
-          <div><div class="k">Programme</div><div class="v">${a.program||'—'}</div></div>
-          <div><div class="k">Score de validation</div><div class="v">${score(a.validation_score)}</div></div>
+          <div><div class="k">Téléphone</div><div class="v">${esc(a.student_phone)||'—'}</div></div>
+          <div><div class="k">Email</div><div class="v">${esc(a.student_email)||'—'}</div></div>
+          <div><div class="k">Programme</div><div class="v">${esc(a.program)||'—'}</div></div>
+          <div><div class="k">Score</div><div class="v">${score(a.validation_score)}</div></div>
           <div><div class="k">Créée le</div><div class="v">${fmtDate(a.created_at)}</div></div>
           <div><div class="k">Décision le</div><div class="v">${fmtDate(a.decided_at)}</div></div>
         </div>
-        ${a.ai_notes ? `<div class="ai-notes">${a.ai_notes}</div>` : ''}
-        ${a.decision_comment ? `<div class="section-title">Commentaire de décision</div><div class="v">${a.decision_comment}</div>` : ''}
-        <div class="section-title">Documents (${(a.documents||[]).length})</div>
-        ${docs}
-        ${decided ? '' : `<div class="actions">
-          <button class="green" onclick="decide('${a.id}','ACCEPTED')">✓ Accepter</button>
-          <button class="red" onclick="decide('${a.id}','REJECTED')">✗ Refuser</button>
-        </div>`}
+        ${a.ai_notes?`<div class="ai-notes">${esc(a.ai_notes)}</div>`:''}
+        ${a.decision_comment?`<div class="section-title">Commentaire</div><div class="v">${esc(a.decision_comment)}</div>`:''}
+        <div class="section-title">Documents (${(a.documents||[]).length})</div>${docs}
+        ${decided?'':`<div class="actions"><button class="green" onclick="decide('${a.id}','ACCEPTED')">✓ Accepter</button><button class="red" onclick="decide('${a.id}','REJECTED')">✗ Refuser</button></div>`}
       </div>`;
     $('overlay').classList.add('show');
   } catch(e){ showErr(e.message); }
 }
-
+async function decide(id,decision){
+  const verb=decision==='ACCEPTED'?'accepter':'refuser';
+  const comment=prompt(`Commentaire pour ${verb} :`, decision==='ACCEPTED'?'Félicitations, vous êtes admis(e) !':'');
+  if(comment===null) return;
+  try { await api('/api/v1/applications/'+id+'/decision',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({decision,comment})}); closeModal(); loadList(); showOk('Décision enregistrée.'); }
+  catch(e){ showErr("Décision impossible : "+e.message); }
+}
 function closeModal(){ $('overlay').classList.remove('show'); }
 
-async function decide(id, decision){
-  const verb = decision==='ACCEPTED' ? 'accepter' : 'refuser';
-  const comment = prompt(`Commentaire pour ${verb} cette candidature :`,
-    decision==='ACCEPTED' ? 'Félicitations, vous êtes admis(e) !' : '');
-  if(comment===null) return;
+/* ---------- Programmes / Formulaires ---------- */
+async function loadPrograms(){
+  clearMsg(); const c=creds(); if(!c.k||!c.s) return;
+  try { PROGS=await api('/api/v1/admin/programs'); renderPrograms(); }
+  catch(e){ PROGS=[]; showErr(e.message); $('progWrap').innerHTML=''; }
+}
+function renderPrograms(){
+  const t=($('psearch').value||'').trim().toLowerCase();
+  const items=PROGS.filter(p=>!t || (p.name||'').toLowerCase().includes(t) || (p.domain||'').toLowerCase().includes(t));
+  $('pcount').textContent=`${items.length} / ${PROGS.length} programme(s)`;
+  if(!items.length){ $('progWrap').innerHTML='<div class="empty">Aucun programme.</div>'; return; }
+  const rows=items.map(p=>`<tr class="click" onclick="editForm('${p.id}','${esc(p.name).replace(/'/g,"&#39;")}')">
+    <td><b>${esc(p.name)}</b></td><td class="muted">${esc(p.domain)||'—'}</td>
+    <td>${p.is_active?'<span class="badge b-valid">actif</span>':'<span class="badge b-draft">inactif</span>'}</td>
+    <td class="muted">Configurer le formulaire →</td></tr>`).join('');
+  $('progWrap').innerHTML=`<table><thead><tr><th>Programme</th><th>Domaine</th><th>État</th><th>Formulaire</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+function fieldRow(f={}){
+  const opts=FIELD_TYPES.map(t=>`<option ${f.field_type===t?'selected':''}>${t}</option>`).join('');
+  return `<div class="erow">
+    <input class="f-label" placeholder="Libellé (ex: Date de naissance)" value="${esc(f.label)}"/>
+    <select class="f-type">${opts}</select>
+    <input class="f-regex" placeholder="regex (optionnel)" value="${esc(f.validation_regex)}"/>
+    <label><input type="checkbox" class="f-req" ${f.is_required===false?'':'checked'}/> requis</label>
+    <button class="del sm" onclick="this.closest('.erow').remove()">✕</button></div>`;
+}
+function docRow(d={}){
+  const opts=DOC_TYPES.map(t=>`<option ${d.document_type===t?'selected':''}>${t}</option>`).join('');
+  return `<div class="erow">
+    <select class="d-type">${opts}</select>
+    <input class="d-label" placeholder="Libellé (ex: Votre diplôme)" value="${esc(d.label)}"/>
+    <label><input type="checkbox" class="d-req" ${d.is_required===false?'':'checked'}/> requis</label>
+    <button class="del sm" onclick="this.closest('.erow').remove()">✕</button></div>`;
+}
+async function editForm(programId, name){
+  clearMsg();
+  let form={fields:[],required_documents:[],is_published:false};
+  try { form=await api('/api/v1/admin/forms/'+programId); }
+  catch(e){ /* 404 = pas encore de formulaire → on part d'un brouillon vide */ }
+  const pub = form.is_published;
+  $('modal').innerHTML=`<div class="modal-head"><h2>📝 ${esc(name)}</h2>
+      <span class="badge ${pub?'b-pub':'b-draft'}">${pub?'publié':'brouillon'}</span>
+      <span class="x" onclick="closeModal()">×</span></div>
+    <div class="modal-body">
+      <div class="section-title">Champs à remplir par l'étudiant
+        <button class="sm" onclick="document.getElementById('fields').insertAdjacentHTML('beforeend', window.__fieldRow())">+ champ</button></div>
+      <div id="fields">${(form.fields||[]).sort((a,b)=>a.order-b.order).map(fieldRow).join('')}</div>
+      <div class="section-title">Documents requis
+        <button class="sm" onclick="document.getElementById('docs').insertAdjacentHTML('beforeend', window.__docRow())">+ document</button></div>
+      <div id="docs">${(form.required_documents||[]).sort((a,b)=>a.order-b.order).map(docRow).join('')}</div>
+      <div class="actions">
+        <button class="green" onclick="saveForm('${programId}', ${pub})">💾 Enregistrer & publier</button>
+        <button class="ghost" onclick="closeModal()">Annuler</button>
+        <span class="muted" style="font-size:12px;align-self:center">L'étudiant verra ces champs/documents pour ce programme.</span>
+      </div>
+    </div>`;
+  $('overlay').classList.add('show');
+}
+window.__fieldRow=()=>fieldRow(); window.__docRow=()=>docRow();
+
+function collectForm(){
+  const fields=[...document.querySelectorAll('#fields .erow')].map((r,i)=>({
+    label:r.querySelector('.f-label').value.trim(),
+    field_type:r.querySelector('.f-type').value,
+    validation_regex:r.querySelector('.f-regex').value.trim()||null,
+    is_required:r.querySelector('.f-req').checked, order:i,
+  })).filter(f=>f.label);
+  const required_documents=[...document.querySelectorAll('#docs .erow')].map((r,i)=>({
+    document_type:r.querySelector('.d-type').value,
+    label:r.querySelector('.d-label').value.trim()||r.querySelector('.d-type').value,
+    is_required:r.querySelector('.d-req').checked, order:i,
+  }));
+  return {fields, required_documents};
+}
+async function saveForm(programId, wasPublished){
+  clearMsg();
+  const payload=collectForm();
   try {
-    await api('/api/v1/applications/'+id+'/decision', {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ decision, comment }),
-    });
-    closeModal();
-    loadList();
-  } catch(e){ showErr("Décision impossible : "+e.message); }
+    if(wasPublished){ await api('/api/v1/admin/forms/'+programId+'/unpublish',{method:'POST'}); }
+    await api('/api/v1/admin/forms/'+programId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    await api('/api/v1/admin/forms/'+programId+'/publish',{method:'POST'});
+    closeModal(); showOk('Formulaire enregistré et publié ✅ — le bot demandera ces champs/documents.');
+  } catch(e){ showErr("Échec : "+e.message); }
 }
 
-// init
-(function(){
-  const c=creds();
-  $('apiKey').value=c.k; $('apiSecret').value=c.s;
-  if(c.k && c.s) loadList();
-})();
+/* init */
+(function(){ const c=creds(); $('apiKey').value=c.k; $('apiSecret').value=c.s; if(c.k&&c.s){ loadList(); loadPrograms(); } })();
 </script>
 </body>
 </html>

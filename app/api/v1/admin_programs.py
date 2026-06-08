@@ -275,3 +275,41 @@ def publish_form(
         "message": "Formulaire publié avec succès.",
         "form": AdmissionFormRead.model_validate(form).model_dump(mode="json"),
     })
+
+
+# ----------------------------------------------------------------------
+# POST /api/v1/admin/forms/{program_id}/unpublish
+# ----------------------------------------------------------------------
+@router.post(
+    "/forms/{program_id}/unpublish",
+    summary="Dépublier le formulaire (le repasse en brouillon pour le modifier)",
+)
+def unpublish_form(
+    program_id: uuid.UUID,
+    university: Annotated[University, Depends(get_current_university)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    _get_program_or_404(program_id, university, db)
+
+    form = db.execute(
+        select(AdmissionForm)
+        .options(
+            selectinload(AdmissionForm.fields),
+            selectinload(AdmissionForm.required_documents),
+        )
+        .where(AdmissionForm.program_id == program_id)
+    ).scalar_one_or_none()
+
+    if form is None:
+        raise _error("FORM_NOT_FOUND", "Aucun formulaire trouvé pour ce programme.", 404)
+
+    form.is_published = False
+    form.published_at = None
+    db.add(form)
+    db.commit()
+    db.refresh(form)
+
+    return _success({
+        "message": "Formulaire dépublié — vous pouvez le modifier.",
+        "form": AdmissionFormRead.model_validate(form).model_dump(mode="json"),
+    })
