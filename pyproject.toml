@@ -56,7 +56,7 @@ exclude = ["alembic/versions/", "tests/"]
 # ============ Pytest ============
 [tool.pytest.ini_options]
 minversion = "8.0"
-addopts = "-ra -q --strict-markers --ignore=tests/test_ocr.py"
+addopts = "-ra -q --strict-markers"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]

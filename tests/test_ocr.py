@@ -26,7 +26,7 @@ def _make_png_bytes(text_hint: str = "test") -> bytes:
 def test_extract_from_image_returns_string(ocr_service, monkeypatch):
     """Une image PNG est routée vers _extract_from_image."""
     monkeypatch.setattr(
-        "app.services.ocr_service.pytesseract.image_to_string",
+        "pytesseract.image_to_string",
         lambda img, lang: "Texte simulé extrait par OCR",
     )
     text = ocr_service.extract_text(_make_png_bytes(), mime_type="image/png")
@@ -41,9 +41,9 @@ def test_extract_from_pdf_routes_to_pdf_handler(ocr_service, monkeypatch):
         captured["called"] = True
         return [Image.new("RGB", (50, 50), color="white")]
 
-    monkeypatch.setattr("app.services.ocr_service.convert_from_bytes", fake_convert)
+    monkeypatch.setattr("pdf2image.convert_from_bytes", fake_convert)
     monkeypatch.setattr(
-        "app.services.ocr_service.pytesseract.image_to_string",
+        "pytesseract.image_to_string",
         lambda img, lang: "Page de PDF",
     )
 
@@ -61,7 +61,7 @@ def test_extract_empty_on_corrupted_file(ocr_service, monkeypatch):
 def test_extract_image_converts_palette_to_rgb(ocr_service, monkeypatch):
     """Image en mode palette (P) est convertie en RGB avant l'OCR."""
     monkeypatch.setattr(
-        "app.services.ocr_service.pytesseract.image_to_string",
+        "pytesseract.image_to_string",
         lambda img, lang: "texte ok",
     )
     buf = io.BytesIO()
@@ -73,7 +73,7 @@ def test_extract_image_converts_palette_to_rgb(ocr_service, monkeypatch):
 def test_extract_pdf_conversion_error_returns_empty(ocr_service, monkeypatch):
     """Erreur lors de la conversion PDF→images → retourne '' sans crash."""
     monkeypatch.setattr(
-        "app.services.ocr_service.convert_from_bytes",
+        "pdf2image.convert_from_bytes",
         lambda *a, **kw: (_ for _ in ()).throw(Exception("Poppler absent")),
     )
     text = ocr_service.extract_text(b"%PDF-1.4 fake", mime_type="application/pdf")
@@ -88,9 +88,9 @@ def test_extract_autodetects_pdf_by_magic_bytes(ocr_service, monkeypatch):
         captured["called"] = True
         return [Image.new("RGB", (50, 50), color="white")]
 
-    monkeypatch.setattr("app.services.ocr_service.convert_from_bytes", fake_convert)
+    monkeypatch.setattr("pdf2image.convert_from_bytes", fake_convert)
     monkeypatch.setattr(
-        "app.services.ocr_service.pytesseract.image_to_string",
+        "pytesseract.image_to_string",
         lambda img, lang: "contenu",
     )
     ocr_service.extract_text(b"%PDF-1.4 content", mime_type=None)
