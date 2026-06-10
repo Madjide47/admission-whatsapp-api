@@ -78,6 +78,7 @@ class ApplicationRead(ApplicationBase):
     program_id: uuid.UUID | None = None
     status: ApplicationStatus
     validation_score: float | None = None
+    average: float | None = None
     ai_notes: str | None = None
     decision_comment: str | None = None
     decided_at: datetime | None = None
@@ -97,5 +98,6 @@ class ApplicationListItem(BaseModel):
     program: str | None
     status: ApplicationStatus
     validation_score: float | None
+    average: float | None = None
     created_at: datetime
     updated_at: datetime

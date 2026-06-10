@@ -374,8 +374,8 @@ function render(){
     <td><div class="who"><div class="avatar">${esc(initials(a.student_name))}</div>
       <span class="nm">${esc(a.student_name)||'<span class=muted>—</span>'}</span></div></td>
     <td class="muted">${esc(a.student_phone)}</td><td>${esc(a.program)||'<span class=muted>—</span>'}</td>
-    <td>${badge(a.status)}</td><td>${scoreBar(a.validation_score)}</td><td class="muted">${fmtDate(a.created_at)}</td></tr>`).join('');
-  $('tableWrap').innerHTML=`<div class="card"><table><thead><tr><th>Étudiant</th><th>Téléphone</th><th>Programme</th><th>Statut</th><th>Score</th><th>Créée le</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    <td>${badge(a.status)}</td><td>${a.average==null?'<span class=muted>—</span>':'<b>'+a.average+'</b><span class="muted">/20</span>'}</td><td>${scoreBar(a.validation_score)}</td><td class="muted">${fmtDate(a.created_at)}</td></tr>`).join('');
+  $('tableWrap').innerHTML=`<div class="card"><table><thead><tr><th>Étudiant</th><th>Téléphone</th><th>Programme</th><th>Statut</th><th>Moyenne</th><th>Score</th><th>Créée le</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 async function openDetail(id){
   clearMsg();
@@ -402,6 +402,7 @@ async function openDetail(id){
           <div><div class="k">Email</div><div class="v">${esc(a.student_email)||'—'}</div></div>
           <div><div class="k">Programme</div><div class="v">${esc(a.program)||'—'}</div></div>
           <div><div class="k">Score de validation</div><div class="v">${scoreBar(a.validation_score)}</div></div>
+          <div><div class="k">Moyenne</div><div class="v">${a.average==null?'—':'<b>'+a.average+'</b> /20'}</div></div>
           <div><div class="k">Créée le</div><div class="v">${fmtDate(a.created_at)}</div></div>
           <div><div class="k">Décision le</div><div class="v">${fmtDate(a.decided_at)}</div></div>
         </div>
