@@ -204,6 +204,14 @@
   .asst-table th { color:var(--gold); cursor:pointer; }
   .asst-typing { color:var(--faint); font-size:12px; font-style:italic; }
 
+  /* section critères d'admission */
+  .crit { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+  .crit .line { display:flex; gap:8px; }
+  .crit input, .crit textarea { background:#15110a; border:1px solid var(--line2); color:var(--txt);
+    border-radius:9px; padding:8px 10px; font-size:12.5px; font-family:inherit; width:100%; box-sizing:border-box; }
+  .crit textarea { resize:vertical; }
+  .crit .switch { margin-top:2px; }
+
   /* login gate */
   .gate { max-width:420px; margin:60px auto; text-align:center; background:linear-gradient(180deg,#16110a,#100c07);
     border:1px solid var(--line2); border-radius:18px; padding:36px 30px; box-shadow:var(--shadow); }
@@ -501,6 +509,9 @@ async function editForm(programId, name){
   let form={fields:[],required_documents:[],is_published:false};
   try { form=await api('/api/v1/admin/forms/'+programId); }
   catch(e){ /* 404 = pas encore de formulaire → brouillon vide */ }
+  let criteria=null;
+  try { criteria=await api('/api/v1/admin/programs/'+programId+'/criteria'); }
+  catch(e){ /* pas de critères encore → section vide */ }
   const pub = form.is_published;
   const existingDocs=(form.required_documents||[]).slice().sort((a,b)=>a.order-b.order);
   // Aucun document configuré → pré-remplir avec les 4 documents par défaut, ce que
@@ -525,6 +536,10 @@ async function editForm(programId, name){
           <div class="hint">Pièces que l'étudiant devra envoyer (analysées par l'IA).${usedDefaults?' <b>Documents par défaut pré-remplis</b> — modifiez, supprimez ou ajoutez à votre guise.':''}</div>
           <div id="docs" oninput="renderFormPreview()" onchange="renderFormPreview()">${docsHtml}</div>
           <button class="addbtn" onclick="addDoc()">＋ Ajouter un document</button>
+
+          <div class="section-title" style="margin-top:24px">🎯 Critères d'admission<span class="grow"></span></div>
+          <div class="hint">Conditions affichées à l'étudiant sur WhatsApp avant de postuler, et utilisées par l'assistant pour filtrer/classer.</div>
+          <div class="crit" id="crit" oninput="renderFormPreview()" onchange="renderFormPreview()">${criteriaSectionHtml(criteria)}</div>
         </div>
 
         <div class="preview">
@@ -545,12 +560,24 @@ async function editForm(programId, name){
 
 function renderFormPreview(){
   const {fields, required_documents}=collectForm();
+  const cr=collectCriteria();
+  const critItems=[];
+  if(cr && cr.whatsapp_display){
+    if(cr.required_degree) critItems.push(cr.required_degree);
+    if(cr.min_average!=null && !isNaN(cr.min_average)) critItems.push('Moyenne générale ≥ '+cr.min_average+'/20');
+    if(cr.accepted_specialties.length) critItems.push('Spécialité : '+cr.accepted_specialties.join(', '));
+    cr.prerequisites.forEach(p=>critItems.push(p));
+  }
   let html='';
-  if(!fields.length && !required_documents.length){
-    $('formPreview').innerHTML='<div class="pempty">Ajoutez des informations ou des documents pour visualiser ce que verra l\'étudiant. 👇</div>';
+  if(!fields.length && !required_documents.length && !critItems.length){
+    $('formPreview').innerHTML='<div class="pempty">Ajoutez des informations, documents ou critères pour visualiser ce que verra l\'étudiant. 👇</div>';
     return;
   }
   html+='<div class="bubble bot">👋 Bienvenue ! Constituons votre dossier.</div>';
+  if(critItems.length){
+    html+='<div class="bubble sys">Prérequis</div>';
+    html+='<div class="bubble bot">📋 <b>Prérequis du programme</b><br>• '+critItems.map(esc).join('<br>• ')+'<br><br>Souhaitez-vous continuer ? Répondez <b>oui</b> ou <b>non</b>.</div>';
+  }
   if(fields.length){
     html+='<div class="bubble sys">Informations</div>';
     fields.forEach(f=>{ html+=`<div class="bubble bot">📝 ${esc(f.label)}${f.is_required?'':' <i style="opacity:.6">(facultatif)</i>'}</div>`; });
@@ -563,6 +590,32 @@ function renderFormPreview(){
   $('formPreview').innerHTML=html;
 }
 
+function criteriaSectionHtml(c){
+  c=c||{};
+  const specs=(c.accepted_specialties||[]).join(', ');
+  const prereqs=(c.prerequisites||[]).join('\n');
+  const wa = c.whatsapp_display!==false;
+  return `<div class="line">
+      <input id="cr-avg" class="small" type="number" step="0.5" min="0" max="20" placeholder="Moyenne min /20" value="${c.min_average!=null?c.min_average:''}"/>
+      <input id="cr-degree" class="small" placeholder="Diplôme requis (ex : Bac+3)" value="${esc(c.required_degree||'')}"/>
+    </div>
+    <input id="cr-specialties" class="lbl" placeholder="Spécialités acceptées (séparées par des virgules)" value="${esc(specs)}"/>
+    <textarea id="cr-prereq" class="lbl" rows="3" placeholder="Autres prérequis, un par ligne (ex : Lettre de motivation)">${esc(prereqs)}</textarea>
+    <textarea id="cr-notes" class="lbl" rows="2" placeholder="Notes complémentaires affichées à l'étudiant (optionnel)">${esc(c.additional_notes||'')}</textarea>
+    <label class="switch"><input type="checkbox" id="cr-wa" ${wa?'checked':''}/><span class="track"></span>Afficher ces prérequis sur WhatsApp</label>`;
+}
+function collectCriteria(){
+  if(!$('cr-avg')) return null;
+  const avg=$('cr-avg').value.trim();
+  return {
+    prerequisites: $('cr-prereq').value.split('\n').map(s=>s.trim()).filter(Boolean),
+    min_average: avg===''?null:parseFloat(avg),
+    required_degree: $('cr-degree').value.trim()||null,
+    accepted_specialties: $('cr-specialties').value.split(',').map(s=>s.trim()).filter(Boolean),
+    additional_notes: $('cr-notes').value.trim()||null,
+    whatsapp_display: $('cr-wa').checked,
+  };
+}
 function collectForm(){
   const fields=[...document.querySelectorAll('#fields .fcard')].map((r,i)=>({
     label:r.querySelector('.f-label').value.trim(),
@@ -584,7 +637,9 @@ async function saveForm(programId, wasPublished){
     if(wasPublished){ await api('/api/v1/admin/forms/'+programId+'/unpublish',{method:'POST'}); }
     await api('/api/v1/admin/forms/'+programId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     await api('/api/v1/admin/forms/'+programId+'/publish',{method:'POST'});
-    closeModal(); showOk('Formulaire enregistré et publié ✅ — le bot demandera ces champs/documents.');
+    const crit=collectCriteria();
+    if(crit){ await api('/api/v1/admin/programs/'+programId+'/criteria',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(crit)}); }
+    closeModal(); showOk('Formulaire et critères enregistrés ✅ — le bot demandera ces champs/documents et affichera les prérequis.');
   } catch(e){ showErr("Échec : "+e.message); }
 }
 
