@@ -31,6 +31,7 @@ class ConversationState(str, Enum):
     CHOOSE_UNIVERSITY = "CHOOSE_UNIVERSITY"   # v2 : sélection université depuis une liste filtrée
     COLLECT_NAME = "COLLECT_NAME"
     CHOOSE_PROGRAM = "CHOOSE_PROGRAM"         # v2 : sélection programme depuis une liste
+    CONFIRM_PREREQUISITES = "CONFIRM_PREREQUISITES"  # v2 : affichage prérequis + oui/non
     COLLECT_PROGRAM = "COLLECT_PROGRAM"       # fallback texte libre (pas de programmes configurés)
     COLLECT_FIELDS = "COLLECT_FIELDS"         # v2 : saisie des champs dynamiques du formulaire
     AWAITING_ENROLLMENT_CHOICE = "AWAITING_ENROLLMENT_CHOICE"  # v2 : inscriptions fermées, choix étudiant
@@ -171,6 +172,7 @@ class WhatsAppBot:
             ConversationState.CHOOSE_UNIVERSITY: self._handle_choose_university,
             ConversationState.COLLECT_NAME: self._handle_collect_name,
             ConversationState.CHOOSE_PROGRAM: self._handle_choose_program,
+            ConversationState.CONFIRM_PREREQUISITES: self._handle_confirm_prerequisites,
             ConversationState.COLLECT_PROGRAM: self._handle_collect_program,
             ConversationState.AWAITING_ENROLLMENT_CHOICE: self._handle_awaiting_enrollment_choice,
             ConversationState.COLLECT_FIELDS: self._handle_collect_fields,
@@ -242,6 +244,10 @@ class WhatsAppBot:
             ),
             ConversationState.CHOOSE_PROGRAM: (
                 "Répondez avec le *numéro* du programme que vous souhaitez intégrer."
+            ),
+            ConversationState.CONFIRM_PREREQUISITES: (
+                "Répondez *oui* pour continuer votre candidature, ou *non* pour "
+                "choisir un autre programme."
             ),
             ConversationState.COLLECT_PROGRAM: (
                 "Tapez le nom du programme visé.\n"
@@ -492,7 +498,7 @@ class WhatsAppBot:
         if not chosen.is_enrollment_open():
             return self._propose_enrollment_choice(application, chosen)
 
-        return self._begin_collection(
+        return self._maybe_show_prerequisites(
             application, f"✅ Programme *{chosen.name}* sélectionné !"
         )
 
@@ -550,7 +556,7 @@ class WhatsAppBot:
             return {"state": ConversationState.WELCOME.value, "action": "enrollment_deferred"}
 
         # Option 2 : dépôt immédiat — champs puis documents, envoi différé
-        return self._begin_collection(
+        return self._maybe_show_prerequisites(
             application,
             "✅ Votre candidature sera transmise à l'université dès l'ouverture des inscriptions.",
         )
@@ -563,6 +569,91 @@ class WhatsAppBot:
 
         application.program = text.strip()[:150]
         return self._begin_collection(application, "Parfait ! 📄")
+
+    def _maybe_show_prerequisites(self, application: Application, intro: str) -> dict:
+        """Avant la collecte : affiche les prérequis du programme (si configurés et
+        whatsapp_display) et demande oui/non. Sinon, démarre directement la collecte."""
+        criteria = self._get_program_criteria(application)
+        if criteria and criteria.whatsapp_display and criteria.has_any_prerequisite():
+            application.conversation_state = ConversationState.CONFIRM_PREREQUISITES.value
+            self.db.add(application)
+            self.db.commit()
+            self.send_message(
+                application.student_phone,
+                f"{intro}\n\n{self._format_prerequisites(application.program, criteria)}",
+            )
+            return {"state": application.conversation_state, "action": "asked_prerequisites"}
+        return self._begin_collection(application, intro)
+
+    def _handle_confirm_prerequisites(self, application: Application, text: str) -> dict:
+        """Réponse oui/non à l'affichage des prérequis du programme."""
+        answer = text.strip().lower()
+        if answer in {"oui", "o", "yes", "y", "ok", "1", "d'accord", "daccord"}:
+            return self._begin_collection(
+                application, "✅ Parfait, poursuivons votre candidature !"
+            )
+        if answer in {"non", "n", "no", "2"}:
+            programs = self._list_programs(application.university_id)
+            application.program = None
+            application.program_id = None
+            application.conversation_state = ConversationState.CHOOSE_PROGRAM.value
+            self.db.add(application)
+            self.db.commit()
+            lines = [
+                "Pas de souci 🙂 Vous pouvez choisir un autre programme :",
+                "",
+            ]
+            for i, p in enumerate(programs, start=1):
+                lines.append(f"{i}. {p.name}")
+            self.send_message(application.student_phone, "\n".join(lines))
+            return {"state": application.conversation_state, "action": "prerequisites_declined"}
+
+        self.send_message(
+            application.student_phone,
+            "Répondez *oui* pour continuer votre candidature, ou *non* pour choisir "
+            "un autre programme.",
+        )
+        return {"state": application.conversation_state, "action": "invalid_prereq_choice"}
+
+    def _get_program_criteria(self, application: Application):
+        """Critères d'admission du programme de la candidature (ou None)."""
+        from app.models.program_criteria import ProgramCriteria
+
+        try:
+            program_id = application.program_id
+            if program_id is None:
+                program = self._find_program(application.university_id, application.program)
+                program_id = program.id if program else None
+            if program_id is None:
+                return None
+            return self.db.execute(
+                select(ProgramCriteria).where(ProgramCriteria.program_id == program_id)
+            ).scalar_one_or_none()
+        except Exception:
+            logger.warning("Lecture des critères impossible pour app %s", application.id, exc_info=True)
+            return None
+
+    @staticmethod
+    def _format_prerequisites(program_name: str | None, criteria) -> str:
+        lines = [
+            f"📋 *Prérequis — {program_name or 'ce programme'}*",
+            "",
+            "Avant de soumettre votre candidature, vérifiez que vous remplissez les "
+            "conditions suivantes :",
+            "",
+        ]
+        if criteria.required_degree:
+            lines.append(f"• {criteria.required_degree}")
+        if criteria.min_average is not None:
+            lines.append(f"• Moyenne générale ≥ {('%g' % float(criteria.min_average))}/20")
+        if criteria.accepted_specialties:
+            lines.append(f"• Spécialité : {', '.join(criteria.accepted_specialties)}")
+        for prereq in (criteria.prerequisites or []):
+            lines.append(f"• {prereq}")
+        if criteria.additional_notes:
+            lines += ["", f"ℹ️ {criteria.additional_notes}"]
+        lines += ["", "Souhaitez-vous continuer votre candidature ? Répondez *oui* ou *non*."]
+        return "\n".join(lines)
 
     def _begin_collection(self, application: Application, intro: str) -> dict:
         """Après sélection du programme : champs dynamiques d'abord s'il y en a,
