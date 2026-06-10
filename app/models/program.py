@@ -78,6 +78,11 @@ class Program(Base):
     applications: Mapped[list["Application"]] = relationship(  # type: ignore[name-defined]
         back_populates="program_obj",
     )
+    criteria: Mapped["ProgramCriteria | None"] = relationship(  # type: ignore[name-defined]
+        back_populates="program",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
 
     def is_enrollment_open(self, reference_date: date | None = None) -> bool:
         """Retourne True si les inscriptions sont ouvertes à la date donnée (ou aujourd'hui)."""

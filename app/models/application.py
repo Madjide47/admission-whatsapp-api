@@ -64,6 +64,9 @@ class Application(Base):
     )
 
     validation_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # Moyenne académique normalisée (sur 20) — extraite du relevé par l'IA ou
+    # déclarée par l'étudiant. Sert au filtrage/classement côté chatbot admin.
+    average: Mapped[float | None] = mapped_column(Float, nullable=True, index=True)
     ai_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     conversation_state: Mapped[str | None] = mapped_column(String(50), nullable=True)
 

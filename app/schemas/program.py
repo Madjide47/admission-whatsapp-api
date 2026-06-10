@@ -2,7 +2,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.program import FieldType
 
@@ -95,6 +95,40 @@ class ProgramRead(BaseModel):
 class ProgramReadWithForm(ProgramRead):
     """Programme avec son formulaire publié (si existant)."""
     published_form: AdmissionFormRead | None = None
+
+
+# ======================================================================
+# ProgramCriteria — critères d'admission
+# ======================================================================
+class ProgramCriteriaUpdate(BaseModel):
+    """Payload PUT — crée ou remplace les critères d'admission d'un programme."""
+    prerequisites: list[str] = Field(default_factory=list)
+    min_average: float | None = Field(None, ge=0, le=20)
+    required_degree: str | None = Field(None, max_length=100)
+    accepted_specialties: list[str] = Field(default_factory=list)
+    additional_notes: str | None = Field(None, max_length=2000)
+    whatsapp_display: bool = True
+
+
+class ProgramCriteriaRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    program_id: uuid.UUID
+    prerequisites: list[str] = []
+    min_average: float | None = None
+    required_degree: str | None = None
+    accepted_specialties: list[str] = []
+    additional_notes: str | None = None
+    whatsapp_display: bool = True
+    updated_by_admin: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+    @field_validator("prerequisites", "accepted_specialties", mode="before")
+    @classmethod
+    def _none_to_list(cls, v):
+        return v or []
 
 
 # ======================================================================

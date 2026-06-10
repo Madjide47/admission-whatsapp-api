@@ -11,6 +11,8 @@ from app.models.application import Application, ApplicationStatus
 from app.models.document import Document, DocumentType
 from app.models.webhook_log import WebhookDelivery, WebhookStatus
 from app.models.form_field_value import ApplicationFieldValue
+from app.models.program_criteria import ProgramCriteria
+from app.models.admin_chat import AdminChatSession
 
 __all__ = [
     "University",
@@ -26,4 +28,6 @@ __all__ = [
     "WebhookDelivery",
     "WebhookStatus",
     "ApplicationFieldValue",
+    "ProgramCriteria",
+    "AdminChatSession",
 ]

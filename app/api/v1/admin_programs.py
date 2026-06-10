@@ -18,11 +18,14 @@ from sqlalchemy.orm import Session, selectinload
 from app.auth.api_key import get_current_university
 from app.database import get_db
 from app.models.program import AdmissionForm, FormField, Program, RequiredDocument
+from app.models.program_criteria import ProgramCriteria
 from app.models.university import University
 from app.schemas.program import (
     AdmissionFormRead,
     AdmissionFormUpdate,
     ProgramCreate,
+    ProgramCriteriaRead,
+    ProgramCriteriaUpdate,
     ProgramRead,
     ProgramUpdate,
 )
@@ -313,3 +316,63 @@ def unpublish_form(
         "message": "Formulaire dépublié — vous pouvez le modifier.",
         "form": AdmissionFormRead.model_validate(form).model_dump(mode="json"),
     })
+
+
+# ----------------------------------------------------------------------
+# GET /api/v1/admin/programs/{program_id}/criteria
+# ----------------------------------------------------------------------
+@router.get(
+    "/programs/{program_id}/criteria",
+    summary="Lire les critères d'admission d'un programme",
+)
+def get_program_criteria(
+    program_id: uuid.UUID,
+    university: Annotated[University, Depends(get_current_university)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    _get_program_or_404(program_id, university, db)
+
+    criteria = db.execute(
+        select(ProgramCriteria).where(ProgramCriteria.program_id == program_id)
+    ).scalar_one_or_none()
+
+    if criteria is None:
+        return _success(None)
+    return _success(ProgramCriteriaRead.model_validate(criteria).model_dump(mode="json"))
+
+
+# ----------------------------------------------------------------------
+# PUT /api/v1/admin/programs/{program_id}/criteria
+# ----------------------------------------------------------------------
+@router.put(
+    "/programs/{program_id}/criteria",
+    summary="Créer / mettre à jour les critères d'admission (aussi via chatbot)",
+)
+def update_program_criteria(
+    program_id: uuid.UUID,
+    payload: ProgramCriteriaUpdate,
+    university: Annotated[University, Depends(get_current_university)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    _get_program_or_404(program_id, university, db)
+
+    criteria = db.execute(
+        select(ProgramCriteria).where(ProgramCriteria.program_id == program_id)
+    ).scalar_one_or_none()
+
+    if criteria is None:
+        criteria = ProgramCriteria(program_id=program_id)
+        db.add(criteria)
+
+    criteria.prerequisites = payload.prerequisites
+    criteria.min_average = payload.min_average
+    criteria.required_degree = payload.required_degree
+    criteria.accepted_specialties = payload.accepted_specialties
+    criteria.additional_notes = payload.additional_notes
+    criteria.whatsapp_display = payload.whatsapp_display
+    criteria.updated_by_admin = university.name
+
+    db.commit()
+    db.refresh(criteria)
+
+    return _success(ProgramCriteriaRead.model_validate(criteria).model_dump(mode="json"))

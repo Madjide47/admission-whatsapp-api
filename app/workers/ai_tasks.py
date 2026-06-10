@@ -144,6 +144,17 @@ def classify_document_task(self, document_id: str) -> str:
         document.is_valid = is_valid
         document.validation_errors = errors if errors else None
         db.add(document)
+
+        # Moyenne académique : extraite du relevé de notes pour le filtrage/classement
+        # côté chatbot admin. On ne la pose que depuis un RELEVE_NOTES valide.
+        if is_valid and result.type == DocumentType.RELEVE_NOTES and application is not None:
+            from app.services.grade_parser import extract_average_from_fields
+
+            avg = extract_average_from_fields(result.extracted_fields)
+            if avg is not None:
+                application.average = avg
+                db.add(application)
+
         db.commit()
         db.refresh(document)
 
