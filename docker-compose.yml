@@ -7,6 +7,11 @@
 x-app-env: &app-env
   env_file:
     - .env
+  # DNS stable (Google + Cloudflare) — évite les hoquets de résolution du
+  # réseau Docker/WSL qui faisaient échouer les appels à api.twilio.com.
+  dns:
+    - 8.8.8.8
+    - 1.1.1.1
   depends_on:
     postgres:
       condition: service_healthy
