@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import sentry_sdk
-from fastapi import FastAPI, Request, status
+from fastapi import Depends, FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
@@ -18,7 +18,12 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 from sqlalchemy.exc import SQLAlchemyError
 
+from sqlalchemy.orm import Session
+
 from app import __version__
+from app.auth.api_key import get_current_university
+from app.database import get_db
+from app.models.university import University
 from app.api.v1.router import api_v1_router
 from app.api.whatsapp.twilio_webhook import router as whatsapp_router
 from app.config import settings
@@ -214,6 +219,57 @@ if not settings.is_production:
         if _DEV_CREDS_FILE.exists():
             return FileResponse(_DEV_CREDS_FILE, media_type="application/json")
         return JSONResponse([], status_code=200)
+
+    @app.post("/dev/seed-applications", include_in_schema=False)
+    async def dev_seed_applications(
+        count: int = 30,
+        university: "University" = Depends(get_current_university),
+        db: "Session" = Depends(get_db),
+    ):
+        """DÉMO/DEV : crée des candidatures variées (moyennes/programmes/statuts)
+        pour l'université authentifiée, afin de tester le filtrage du chatbot."""
+        import random
+        import uuid as _uuid
+
+        from sqlalchemy import select as _select
+
+        from app.models.application import Application, ApplicationStatus
+        from app.models.program import Program
+
+        program_names = list(
+            db.execute(
+                _select(Program.name)
+                .where(Program.university_id == university.id)
+                .where(Program.is_active.is_(True))
+                .limit(20)
+            ).scalars().all()
+        ) or ["Licence Informatique", "Licence Droit", "Master Gestion"]
+
+        first = ["Kofi", "Ama", "Yao", "Adjoa", "Kwame", "Akosua", "Komla", "Afi",
+                 "Sena", "Edem", "Mawu", "Élodie", "Jean", "Fatou", "Ibrahim", "Awa"]
+        last = ["Mensah", "Dossou", "Koffi", "Agbeko", "Sodji", "Lawson", "Adjovi",
+                "Bakary", "Traoré", "Nguessan", "Doe", "Amegan", "Kodjo", "Houngbo"]
+        statuses = [
+            ApplicationStatus.VALIDATED, ApplicationStatus.VALIDATED,
+            ApplicationStatus.VALIDATED, ApplicationStatus.COLLECTING_DOCUMENTS,
+            ApplicationStatus.SENT_TO_UNIVERSITY,
+        ]
+
+        count = max(1, min(int(count), 100))
+        for i in range(count):
+            app = Application(
+                id=_uuid.uuid4(),
+                university_id=university.id,
+                student_phone=f"+228{random.randint(10000000, 99999999)}",
+                student_name=f"{random.choice(first)} {random.choice(last)}",
+                program=random.choice(program_names),
+                status=random.choice(statuses),
+                validation_score=round(random.uniform(0.55, 0.99), 2),
+                average=round(random.uniform(8.0, 19.5), 2),
+            )
+            db.add(app)
+        db.commit()
+        return {"success": True, "data": {"created": count, "university": university.name}}
 
 
 @app.get("/", tags=["system"], include_in_schema=False)
