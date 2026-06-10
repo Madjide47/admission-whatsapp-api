@@ -319,7 +319,15 @@ class AdminChatOrchestrator:
         session["history"].append({"role": "user", "content": message})
         program_names = _program_names(db, university.id)
         system_prompt = build_system_prompt(university, program_names)
-        llm = self._get_llm()
+        try:
+            llm = self._get_llm()
+        except Exception:
+            logger.exception("Initialisation du client LLM impossible")
+            save_session(session)
+            return ChatResult(
+                session_id=sid,
+                message="Désolé, l'assistant est momentanément indisponible. Réessayez.",
+            )
         data_table = None
         tool_used = None
 

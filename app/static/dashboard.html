@@ -185,6 +185,24 @@
   .bubble.bot { align-self:flex-start; background:#1d2a1d; color:#e7f3e0; border-bottom-left-radius:4px; }
   .bubble.sys { align-self:center; background:#2a2214; color:var(--gold); font-size:11px; padding:4px 10px; border-radius:999px; }
   .chat .pempty { color:var(--faint); font-size:12px; text-align:center; padding:24px 8px; }
+  .bubble.user { align-self:flex-end; background:#2a2214; color:#fff3d8; border-bottom-right-radius:4px; }
+
+  /* assistant chat */
+  .asst-wrap { max-width:900px; margin:0 auto; display:flex; flex-direction:column; gap:12px; }
+  .asst-chat { min-height:360px; max-height:60vh; }
+  .asst-suggest { display:flex; flex-wrap:wrap; gap:8px; }
+  .asst-suggest button { background:#16110a; border:1px solid var(--line2); color:var(--muted);
+    border-radius:999px; padding:6px 12px; font-size:12px; cursor:pointer; }
+  .asst-suggest button:hover { color:var(--gold); border-color:var(--gold); }
+  .asst-inputrow { display:flex; gap:8px; }
+  .asst-inputrow input { flex:1; }
+  .asst-confirm { background:#241a0a; border:1px solid var(--gold); border-radius:12px; padding:12px;
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .asst-confirm .grow { flex:1; }
+  .asst-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:6px; }
+  .asst-table th, .asst-table td { border-bottom:1px solid var(--line2); padding:5px 8px; text-align:left; }
+  .asst-table th { color:var(--gold); cursor:pointer; }
+  .asst-typing { color:var(--faint); font-size:12px; font-style:italic; }
 
   /* login gate */
   .gate { max-width:420px; margin:60px auto; text-align:center; background:linear-gradient(180deg,#16110a,#100c07);
@@ -200,6 +218,7 @@
   <div class="tabs">
     <div class="tab active" id="tab-applications" onclick="showView('applications')">📋 Candidatures</div>
     <div class="tab" id="tab-programs" onclick="showView('programs')">🎓 Programmes</div>
+    <div class="tab" id="tab-assistant" onclick="showView('assistant')">💬 Assistant</div>
   </div>
   <div class="creds">
     <select id="uniPicker" onchange="pickUni()" title="Se connecter en tant qu'université">
@@ -238,6 +257,26 @@
       <button class="ghost sm" onclick="loadPrograms()">↻ Rafraîchir</button>
     </div>
     <div id="progWrap"></div>
+  </div>
+
+  <!-- ===== Vue Assistant (chatbot admin) ===== -->
+  <div class="view" id="view-assistant">
+    <div class="asst-wrap">
+      <div class="bar">
+        <b style="font-size:15px">💬 Assistant d'admission</b>
+        <span class="muted" style="font-size:12px;margin-left:8px">Pilotez vos candidatures en langage naturel</span>
+        <span class="grow"></span>
+        <button class="ghost sm" onclick="newChat()">✨ Nouvelle conversation</button>
+      </div>
+      <div class="chat asst-chat" id="asstChat"></div>
+      <div class="asst-suggest" id="asstSuggest"></div>
+      <div class="asst-confirm" id="asstConfirm" style="display:none"></div>
+      <div class="asst-inputrow">
+        <input id="asstInput" placeholder="Ex : Liste les candidats avec une moyenne ≥ 14 en Informatique"
+               onkeydown="if(event.key==='Enter')sendChat()" />
+        <button onclick="sendChat()">Envoyer</button>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -284,7 +323,7 @@ function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp
 function initials(n){ if(!n) return '👤'; const p=n.trim().split(/\s+/); return ((p[0]||'')[0]||'').toUpperCase()+((p[1]||'')[0]||'').toUpperCase(); }
 
 function connect(){ localStorage.setItem('dash_key',$('apiKey').value.trim()); localStorage.setItem('dash_secret',$('apiSecret').value.trim()); loadList(); loadPrograms(); }
-function showView(v){ ['applications','programs'].forEach(x=>{ $('tab-'+x).classList.toggle('active',x===v); $('view-'+x).classList.toggle('active',x===v); }); clearMsg(); }
+function showView(v){ ['applications','programs','assistant'].forEach(x=>{ $('tab-'+x).classList.toggle('active',x===v); $('view-'+x).classList.toggle('active',x===v); }); clearMsg(); if(v==='assistant') initChat(); }
 
 function badge(status,nodot){ const [l,c]=STATUS[status]||[status,'b-collect']; return `<span class="badge ${c} ${nodot?'nodot':''}">${l}</span>`; }
 function fmtDate(s){ if(!s) return '—'; const d=new Date(s); return d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }
@@ -570,6 +609,71 @@ function pickUni(){
 /* init */
 (function(){ const c=creds(); $('apiKey').value=c.k; $('apiSecret').value=c.s; loadUniPicker();
   if(c.k&&c.s){ loadList(); loadPrograms(); } else { $('tableWrap').innerHTML=gate(); } })();
+/* ---------- Assistant (chatbot admin) ---------- */
+let ASST_SESSION=null, ASST_BUSY=false, ASST_STARTED=false;
+const ASST_SUGGESTIONS=[
+  "Candidats avec une moyenne ≥ 14, classés du meilleur au moins bon",
+  "Statistiques de la semaine par programme",
+  "Candidats en attente de décision avec un score IA > 0.8",
+  "Configurer les prérequis d'un programme",
+];
+
+function initChat(){
+  const c=creds();
+  if(!c.k||!c.s){ $('asstChat').innerHTML=gate("Connectez-vous pour discuter avec l'assistant."); $('asstSuggest').innerHTML=''; return; }
+  if(ASST_STARTED) return;
+  ASST_STARTED=true;
+  $('asstChat').innerHTML='';
+  asstBubble('bot',"👋 Bonjour ! Je suis votre assistant d'admission. Posez-moi une question sur vos candidatures, programmes ou statistiques — en langage naturel.");
+  $('asstSuggest').innerHTML=ASST_SUGGESTIONS.map(s=>`<button onclick="sendChat(this.textContent)">${esc(s)}</button>`).join('');
+}
+function newChat(){ ASST_SESSION=null; ASST_STARTED=false; hideConfirm(); initChat(); }
+
+function asstBubble(role,html){
+  const d=document.createElement('div'); d.className='bubble '+(role==='user'?'user':'bot'); d.innerHTML=html;
+  $('asstChat').appendChild(d); $('asstChat').scrollTop=$('asstChat').scrollHeight; return d;
+}
+function asstTable(rows){
+  if(!rows||!rows.length) return;
+  const head=`<tr><th>Nom</th><th>Programme</th><th>Statut</th><th>Moyenne</th><th>Score IA</th></tr>`;
+  const body=rows.map(r=>`<tr><td>${esc(r.student_name||'—')}</td><td>${esc(r.program||'—')}</td>
+    <td>${badge(r.status,true)}</td><td>${r.average==null?'—':r.average}</td><td>${score(r.validation_score)}</td></tr>`).join('');
+  const wrap=document.createElement('div'); wrap.className='bubble bot'; wrap.style.maxWidth='100%';
+  wrap.innerHTML=`<table class="asst-table">${head}${body}</table>`;
+  $('asstChat').appendChild(wrap); $('asstChat').scrollTop=$('asstChat').scrollHeight;
+}
+function hideConfirm(){ const b=$('asstConfirm'); b.style.display='none'; b.innerHTML=''; }
+function showConfirm(pa){
+  const b=$('asstConfirm');
+  b.innerHTML=`<span>⚠️ ${esc(pa.summary||'Confirmer cette action ?')}</span><span class="grow"></span>
+    <button onclick="confirmAction()">✅ Confirmer</button>
+    <button class="ghost" onclick="hideConfirm()">Annuler</button>`;
+  b.style.display='flex';
+}
+function confirmAction(){ hideConfirm(); sendChat('oui', true); }
+
+async function sendChat(text, confirm){
+  const c=creds(); if(!c.k||!c.s){ initChat(); return; }
+  if(ASST_BUSY) return;
+  const msg = (text!=null ? text : $('asstInput').value).trim();
+  if(!msg) return;
+  $('asstInput').value=''; hideConfirm();
+  if(!confirm) asstBubble('user', esc(msg));
+  ASST_BUSY=true;
+  const typing=asstBubble('bot','<span class="asst-typing">L\'assistant réfléchit…</span>');
+  try{
+    const body={ message: msg };
+    if(ASST_SESSION) body.session_id=ASST_SESSION;
+    if(confirm) body.confirm_action=true;
+    const data=await api('/api/v1/admin/chat',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    typing.remove();
+    ASST_SESSION=data.session_id;
+    asstBubble('bot', esc(data.message).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>'));
+    if(data.data_table) asstTable(data.data_table);
+    if(data.pending_action) showConfirm(data.pending_action);
+  }catch(e){ typing.remove(); asstBubble('bot','⚠️ '+esc(e.message)); }
+  finally{ ASST_BUSY=false; }
+}
 </script>
 </body>
 </html>
