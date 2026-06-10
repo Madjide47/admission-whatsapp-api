@@ -274,6 +274,7 @@
         <b style="font-size:15px">💬 Assistant d'admission</b>
         <span class="muted" style="font-size:12px;margin-left:8px">Pilotez vos candidatures en langage naturel</span>
         <span class="grow"></span>
+        <button class="ghost sm" onclick="seedDemo()" title="DEV — génère des candidatures de test">🌱 Données de démo</button>
         <button class="ghost sm" onclick="newChat()">✨ Nouvelle conversation</button>
       </div>
       <div class="chat asst-chat" id="asstChat"></div>
@@ -684,6 +685,18 @@ function initChat(){
 }
 function newChat(){ ASST_SESSION=null; ASST_STARTED=false; hideConfirm(); initChat(); }
 
+async function seedDemo(){
+  const c=creds(); if(!c.k||!c.s){ initChat(); return; }
+  ASST_STARTED=true;
+  asstBubble('bot','<span class="asst-typing">Génération de candidatures de démo…</span>');
+  try{
+    const d=await api('/dev/seed-applications?count=30',{method:'POST'});
+    $('asstChat').lastChild.remove();
+    asstBubble('bot','🌱 <b>'+d.created+'</b> candidatures de démo créées avec des moyennes variées. Essayez : <i>« Liste les candidats avec une moyenne ≥ 14, du meilleur au moins bon »</i>.');
+    if(typeof loadList==='function') loadList();
+  }catch(e){ $('asstChat').lastChild.remove(); asstBubble('bot','⚠️ '+esc(e.message)); }
+}
+
 function asstBubble(role,html){
   const d=document.createElement('div'); d.className='bubble '+(role==='user'?'user':'bot'); d.innerHTML=html;
   $('asstChat').appendChild(d); $('asstChat').scrollTop=$('asstChat').scrollHeight; return d;
@@ -691,10 +704,11 @@ function asstBubble(role,html){
 function asstTable(rows){
   if(!rows||!rows.length) return;
   const head=`<tr><th>Nom</th><th>Programme</th><th>Statut</th><th>Moyenne</th><th>Score IA</th></tr>`;
-  const body=rows.map(r=>`<tr><td>${esc(r.student_name||'—')}</td><td>${esc(r.program||'—')}</td>
+  const body=rows.map(r=>`<tr style="cursor:pointer" onclick="openDetail('${r.application_id}')" title="Cliquez pour voir le dossier">
+    <td>${esc(r.student_name||'—')}</td><td>${esc(r.program||'—')}</td>
     <td>${badge(r.status,true)}</td><td>${r.average==null?'—':r.average}</td><td>${score(r.validation_score)}</td></tr>`).join('');
   const wrap=document.createElement('div'); wrap.className='bubble bot'; wrap.style.maxWidth='100%';
-  wrap.innerHTML=`<table class="asst-table">${head}${body}</table>`;
+  wrap.innerHTML=`<div class="muted" style="font-size:11px;margin-bottom:5px">${rows.length} résultat(s) — cliquez une ligne pour ouvrir le dossier</div><table class="asst-table">${head}${body}</table>`;
   $('asstChat').appendChild(wrap); $('asstChat').scrollTop=$('asstChat').scrollHeight;
 }
 function hideConfirm(){ const b=$('asstConfirm'); b.style.display='none'; b.innerHTML=''; }
