@@ -190,6 +190,96 @@ def test_classify_document_not_found(db_session, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# classify_document_task — routage vision (image et PDF)
+# ---------------------------------------------------------------------------
+
+
+def test_classify_pdf_routed_to_vision(db_session, application, monkeypatch):
+    """Un PDF est classifié via la VISION (1re page rendue), pas par le texte OCR."""
+    doc = Document(
+        id=uuid.uuid4(),
+        application_id=application.id,
+        document_type=DocumentType.DIPLOME,
+        gcs_path="gs://bucket/diplome.pdf",
+        mime_type="application/pdf",
+        ocr_text="Diplôme du Baccalauréat… Kofi Mensah… 2024",
+        is_valid=False,
+    )
+    db_session.add(doc)
+    db_session.commit()
+    db_session.refresh(doc)
+
+    monkeypatch.setattr("app.workers.ai_tasks.get_db_session", lambda: db_session)
+    monkeypatch.setattr(db_session, "close", lambda: None)
+    monkeypatch.setattr(
+        "app.workers.ai_tasks.get_storage_service",
+        lambda: MagicMock(download_to_bytes=lambda path: b"%PDF-fake"),
+    )
+    monkeypatch.setattr(
+        "app.workers.ai_tasks.render_pdf_first_page_to_image",
+        lambda content: b"\x89PNG-fake",
+    )
+
+    classifier = MagicMock(
+        classify_image=MagicMock(return_value=_classification(is_valid=True)),
+        classify=MagicMock(return_value=_classification(is_valid=False)),
+    )
+    monkeypatch.setattr("app.workers.ai_tasks.get_ai_classifier", lambda: classifier)
+    monkeypatch.setattr("app.workers.ai_tasks.send_whatsapp", MagicMock())
+
+    with patch("app.workers.ai_tasks.check_application_completion_task.delay"):
+        from app.workers.ai_tasks import classify_document_task
+        classify_document_task.run(str(doc.id))
+
+    classifier.classify_image.assert_called_once()
+    assert classifier.classify_image.call_args.kwargs["mime_type"] == "image/png"
+    classifier.classify.assert_not_called()
+    db_session.refresh(doc)
+    assert doc.is_valid is True
+
+
+def test_classify_pdf_falls_back_to_ocr_when_render_fails(db_session, application, monkeypatch):
+    """Si le rendu de la 1re page échoue → repli sur la classification par texte OCR."""
+    doc = Document(
+        id=uuid.uuid4(),
+        application_id=application.id,
+        document_type=DocumentType.DIPLOME,
+        gcs_path="gs://bucket/diplome.pdf",
+        mime_type="application/pdf",
+        ocr_text="Diplôme du Baccalauréat… Kofi Mensah… 2024",
+        is_valid=False,
+    )
+    db_session.add(doc)
+    db_session.commit()
+    db_session.refresh(doc)
+
+    monkeypatch.setattr("app.workers.ai_tasks.get_db_session", lambda: db_session)
+    monkeypatch.setattr(db_session, "close", lambda: None)
+    monkeypatch.setattr(
+        "app.workers.ai_tasks.get_storage_service",
+        lambda: MagicMock(download_to_bytes=lambda path: b"%PDF-fake"),
+    )
+    monkeypatch.setattr(
+        "app.workers.ai_tasks.render_pdf_first_page_to_image",
+        lambda content: None,  # conversion impossible
+    )
+
+    classifier = MagicMock(
+        classify_image=MagicMock(return_value=_classification(is_valid=True)),
+        classify=MagicMock(return_value=_classification(is_valid=True)),
+    )
+    monkeypatch.setattr("app.workers.ai_tasks.get_ai_classifier", lambda: classifier)
+    monkeypatch.setattr("app.workers.ai_tasks.send_whatsapp", MagicMock())
+
+    with patch("app.workers.ai_tasks.check_application_completion_task.delay"):
+        from app.workers.ai_tasks import classify_document_task
+        classify_document_task.run(str(doc.id))
+
+    classifier.classify_image.assert_not_called()
+    classifier.classify.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
 # classify_document_task — feedback WhatsApp
 # ---------------------------------------------------------------------------
 

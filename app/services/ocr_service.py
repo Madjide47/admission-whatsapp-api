@@ -62,6 +62,28 @@ class OCRService:
         return "\n\n".join(chunks)
 
 
+def render_pdf_first_page_to_image(content: bytes) -> bytes | None:
+    """Rend la 1re page d'un PDF en PNG, pour l'analyse vision de l'IA.
+
+    Permet de classifier un PDF par image (et non seulement par texte OCR) —
+    indispensable pour une photo d'identité enregistrée en PDF. Retourne None
+    si la conversion échoue (PDF corrompu, poppler absent…), l'appelant retombe
+    alors sur la classification par texte OCR.
+    """
+    try:
+        from pdf2image import convert_from_bytes
+
+        pages = convert_from_bytes(content, dpi=200, first_page=1, last_page=1)
+        if not pages:
+            return None
+        buffer = io.BytesIO()
+        pages[0].save(buffer, format="PNG")
+        return buffer.getvalue()
+    except Exception as e:
+        logger.warning("Impossible de rendre la 1re page du PDF en image: %s", e)
+        return None
+
+
 _ocr_service: OCRService | None = None
 
 

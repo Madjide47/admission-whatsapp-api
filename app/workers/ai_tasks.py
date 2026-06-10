@@ -11,6 +11,7 @@ from app.models.application import Application, ApplicationStatus
 from app.models.document import Document, DocumentType
 from app.models.program import Program
 from app.services.ai_classifier import get_ai_classifier
+from app.services.ocr_service import render_pdf_first_page_to_image
 from app.services.storage_service import get_storage_service
 from app.services.validator import ApplicationValidator
 from app.services.whatsapp_bot import DOCUMENT_LABELS, get_next_required_document, send_whatsapp
@@ -90,10 +91,13 @@ def classify_document_task(self, document_id: str) -> str:
         mime = (document.mime_type or "").lower()
         result = None
 
-        # Pour une image, on envoie la VRAIE image à l'IA (vision) : seul moyen
-        # de valider une photo d'identité (sans texte) et plus fiable que l'OCR.
-        if mime.startswith("image/"):
-            try:
+        # On envoie la VRAIE image à l'IA (vision) : seul moyen de valider une
+        # photo d'identité (sans texte) et plus fiable que l'OCR.
+        #   - image/*         : l'image telle quelle.
+        #   - application/pdf : la 1re page rendue en image (couvre la photo en PDF).
+        # Repli automatique sur le texte OCR si téléchargement/conversion/vision échoue.
+        try:
+            if mime.startswith("image/"):
                 image_bytes = get_storage_service().download_to_bytes(document.gcs_path)
                 result = classifier.classify_image(
                     image_bytes=image_bytes,
@@ -101,14 +105,24 @@ def classify_document_task(self, document_id: str) -> str:
                     ocr_text=document.ocr_text or "",
                     expected_type=hinted,
                 )
-            except Exception:
-                logger.warning(
-                    "Analyse vision indisponible pour %s — repli sur le texte OCR",
-                    document_id,
-                    exc_info=True,
-                )
+            elif mime == "application/pdf":
+                pdf_bytes = get_storage_service().download_to_bytes(document.gcs_path)
+                page_image = render_pdf_first_page_to_image(pdf_bytes)
+                if page_image is not None:
+                    result = classifier.classify_image(
+                        image_bytes=page_image,
+                        mime_type="image/png",
+                        ocr_text=document.ocr_text or "",
+                        expected_type=hinted,
+                    )
+        except Exception:
+            logger.warning(
+                "Analyse vision indisponible pour %s — repli sur le texte OCR",
+                document_id,
+                exc_info=True,
+            )
 
-        # PDF, ou repli si la vision a échoué : classification basée sur le texte OCR.
+        # PDF non rendu, ou repli si la vision a échoué : classification par texte OCR.
         if result is None:
             result = classifier.classify(
                 ocr_text=document.ocr_text or "",
