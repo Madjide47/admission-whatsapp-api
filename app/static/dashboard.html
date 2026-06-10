@@ -249,6 +249,14 @@
 const $ = (id) => document.getElementById(id);
 const DOC_TYPES = ["DIPLOME","RELEVE_NOTES","CARTE_IDENTITE","PHOTO","AUTRE"];
 const DOC_LABELS = { DIPLOME:"🎓 Diplôme", RELEVE_NOTES:"📊 Relevé de notes", CARTE_IDENTITE:"🪪 Carte d'identité", PHOTO:"📷 Photo d'identité", AUTRE:"📄 Autre" };
+// Documents par défaut — alignés sur le repli du validateur (_REQUIRED_ORDERED).
+// Pré-remplis dans l'éditeur quand aucun document n'est encore configuré.
+const DEFAULT_DOCS = [
+  { document_type:"DIPLOME",        label:"", is_required:true },
+  { document_type:"RELEVE_NOTES",   label:"", is_required:true },
+  { document_type:"CARTE_IDENTITE", label:"", is_required:true },
+  { document_type:"PHOTO",          label:"", is_required:true },
+];
 const FIELD_TYPES = ["text","email","phone","number","date","select","textarea"];
 const FIELD_LABELS = { text:"Texte", email:"Email", phone:"Téléphone", number:"Nombre", date:"Date", select:"Liste", textarea:"Texte long" };
 const STATUS = {
@@ -455,8 +463,13 @@ async function editForm(programId, name){
   try { form=await api('/api/v1/admin/forms/'+programId); }
   catch(e){ /* 404 = pas encore de formulaire → brouillon vide */ }
   const pub = form.is_published;
+  const existingDocs=(form.required_documents||[]).slice().sort((a,b)=>a.order-b.order);
+  // Aucun document configuré → pré-remplir avec les 4 documents par défaut, ce que
+  // le bot demande de toute façon (repli du validateur). L'admin peut tout modifier.
+  const usedDefaults = existingDocs.length===0;
+  const docsList = usedDefaults ? DEFAULT_DOCS : existingDocs;
   const fieldsHtml=(form.fields||[]).slice().sort((a,b)=>a.order-b.order).map(fieldRow).join('');
-  const docsHtml=(form.required_documents||[]).slice().sort((a,b)=>a.order-b.order).map(docRow).join('');
+  const docsHtml=docsList.map(docRow).join('');
   $('modal').className='modal wide';
   $('modal').innerHTML=`<div class="modal-head"><h2>⚙️ ${esc(name)}</h2>
       <span class="badge ${pub?'b-pub':'b-draft'} nodot">${pub?'publié':'brouillon'}</span>
@@ -470,7 +483,7 @@ async function editForm(programId, name){
           <button class="addbtn" onclick="addField()">＋ Ajouter une information</button>
 
           <div class="section-title" style="margin-top:24px">📎 Documents à fournir<span class="grow"></span></div>
-          <div class="hint">Pièces que l'étudiant devra envoyer (analysées par l'IA).</div>
+          <div class="hint">Pièces que l'étudiant devra envoyer (analysées par l'IA).${usedDefaults?' <b>Documents par défaut pré-remplis</b> — modifiez, supprimez ou ajoutez à votre guise.':''}</div>
           <div id="docs" oninput="renderFormPreview()" onchange="renderFormPreview()">${docsHtml}</div>
           <button class="addbtn" onclick="addDoc()">＋ Ajouter un document</button>
         </div>
